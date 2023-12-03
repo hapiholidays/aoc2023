@@ -1,0 +1,55 @@
+#pragma once
+#define $strobj \
+  2->1: String; \
+  $ss
+
+#define $ss \
+  rec $ss; \
+  2->1 \
+  {^at: \
+    2->1: Int; \
+    1->2: Int; \
+    $ss; \
+   ^length: \
+    1->2: Int; \
+    $ss; \
+   ^substr: \
+    2->1: Int; \
+    2->1: Int; \
+    1->2: String; \
+    $ss;\
+   ^end: \
+    $end; \
+  }
+global $strobj stringobj(1 pure,2);
+local pure service StrObj(stringobj (1 of 2) s) // {{{
+( s[2]>>str;
+  local pure StrObj($ss(1 of 1 pure,2) s, String str)
+  ( s[2]>>
+    {^at:
+      s[2]>>pos;
+      Int res=0;
+      HOST("{ size_t _pos=mpz_get_ui(((libpi::Int*)",pos,".get())->GetValue());") pure;
+      HOST("  ",res,".reset(new libpi::Int((long)((libpi::String*)",str,".get())->GetValue()[_pos]));}") pure;
+      s[2]<<res;
+      StrObj(s,str);
+     ^substr:
+      s[2]>>from;
+      s[2]>>to;
+      String res="";
+      HOST("{ size_t _from=mpz_get_ui(((libpi::Int*)",from,".get())->GetValue());") pure;
+      HOST("  size_t _to=mpz_get_ui(((libpi::Int*)",to,".get())->GetValue());") pure;
+      HOST("  ",res,".reset(new libpi::String(((libpi::String*)",str,".get())->GetValue().substr(_from,_to)));}") pure;
+      s[2]<<res;
+      StrObj(s,str);
+     ^length:
+      Int res=0;
+      HOST("  ",res,".reset(new libpi::Int(((libpi::String*)",str,".get())->GetValue().length()));") pure;
+      s[2]<<res;
+      StrObj(s,str);
+     ^end:
+    }
+  )
+  StrObj(s,str);
+)
+|

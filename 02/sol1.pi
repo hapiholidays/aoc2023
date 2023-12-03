@@ -1,0 +1,194 @@
+#include <sys/file.pi>
+#include <console.pi>
+#include <convert.pi>
+#include "strservice.pi"
+
+#define $ssfindres \
+  1->2: Int; \
+  1->2: $ss(2 of 1 pure,2); \
+  $end;
+#define $ssfind \
+  2->1: $ss(2 of 1 pure,2); \
+  2->1: Int; \
+  $ssfindres
+global $ssfind ssfind(1 pure,2);
+local pure service SsFind(ssfind (1 of 2) s) // {{{
+( s[2]>>ss;
+  s[2]>>char;
+  local pure FindFrom($ssfindres(1 of 1 pure,2) s, $ss(2 of 1 pure,2) ss, Int char, Int pos) // {{{
+  ( ss[1]<<^length;
+    ss[1]>>len;
+    if pos+1<=len
+    then ss[1]<<^at<<pos;
+         ss[1]>>val;
+         if char=val
+         then s[2]<<pos<<ss;
+         else FindFrom(s,ss,char,pos+1);
+    else s[2]<<0-1<<ss;
+  ) // }}}
+  FindFrom(s,ss,char,0);
+) // }}}
+|
+#define $sssplitres \
+  rec $res; \
+  1->2 \
+  {^some: \
+    1->2: String; \
+    $res; \
+   ^none: \
+    1->2: $ss(2 of 1 pure,2); \
+    $end; \
+  }
+#define $sssplit \
+  2->1: $ss(2 of 1 pure,2); \
+  2->1: Int; \
+  $sssplitres
+global $sssplit sssplit(1 pure,2);
+local pure service SsSplit(sssplit (1 of 2) s) // {{{
+( s[2]>>ss;
+  s[2]>>char;
+  local pure SplitFrom($sssplitres(1 of 1 pure,2) s, $ss(2 of 1 pure,2) ss, Int char, Int pos, Int start) // {{{
+  ( ss[1]<<^length;
+    ss[1]>>len;
+    if pos+1<=len
+    then ss[1]<<^at<<pos;
+         ss[1]>>val;
+         if char=val
+         then ss[1]<<^substr<<start<<pos-start;
+              ss[1]>>part;
+              s[2]<<^some<<part;
+              SplitFrom(s,ss,char,pos+1,pos+1);
+         else SplitFrom(s,ss,char,pos+1,start);
+    else ss[1]<<^substr<<start<<pos-start;
+         ss[1]>>part;
+         s[2]<<^some<<part<<^none<<ss;
+  ) // }}}
+  SplitFrom(s,ss,char,0,0);
+) // }}}
+
+|
+f=new file(2 of 2);
+f[1]<<^Read<<"input";
+f[1]>>
+{^OK:
+  local SumIDs($infile(2 of 1,2) data, Int sum) // {{{
+  ( data[1]<<^Line;
+    data[1]>>
+    {^Some:
+      data[1]>>line;
+      sline=new stringobj(2 of 2);
+      sline[1]<<line;
+      sf=new ssfind(2 of 2);
+      sf[1]<<sline<<58;
+      sf[1]>>pos1>>sline;
+      if 6<=pos1
+      then sline[1]<<^substr<<5<<pos1-5;
+           sline[1]>>id;
+           Int intId=0;
+           STRING2INT(id,intId);
+           c=new console(2 of 2);
+           c[1]<<^str<<"ID: "<<^int<<intId<<^str<<" checking..."<<^nl<<^end;
+           sline[1]<<^length;
+           sline[1]>>len;
+           sline[1]<<^substr<<pos1+1<<len-pos1-1;
+           sline[1]>>game;
+           sline[1]<<^end;
+           shows=new sssplit(2 of 2);
+           gameobj=new stringobj(2 of 2);
+           gameobj[1]<<game;
+           shows[1]<<gameobj<<59;
+           local GameOK($infile(2 of 1,2) data, $sssplitres(2 of 1 pure,2) shows, Bool failed) // {{{
+           ( shows[1]>>
+             {^none:
+               shows[1]>>l;
+               l[1]<<^end;
+               if not failed
+               then c=new console(2 of 2);
+                    c[1]<<^str<<"ID: "<<^str<<id<<^str<<" is OK"<<^nl<<^end;
+                    SumIDs(data,sum+intId);
+               else c=new console(2 of 2);
+                    c[1]<<^str<<"ID: "<<^str<<id<<^str<<" is FAILED"<<^nl<<^end;
+                    SumIDs(data,sum);
+              ^some:
+               shows[1]>>cubes;
+               //c=new console(2 of 2);
+               //c[1]<<^str<<"  CUBES: "<<^str<<cubes<<^nl<<^end;
+               cubesobj=new stringobj(2 of 2);
+               cubesobj[1]<<cubes;
+               colors=new sssplit(2 of 2);
+               colors[1]<<cubesobj<<44;
+               local ColorsOK($infile(2 of 1,2) data, $sssplitres(2 of 1 pure,2) shows, $sssplitres(2 of 1 pure,2) colors, Bool failed) // {{{
+               ( colors[1]>>
+                 {^none:
+                   colors[1]>>l;
+                   l[1]<<^end;
+                   GameOK(data,shows,failed);
+                  ^some:
+                   colors[1]>>color;
+                   //c=new console(2 of 2);
+                   //c[1]<<^str<<"  COLOR: "<<^str<<color<<^nl<<^end;
+                   colorobj=new stringobj(2 of 2);
+                   colorobj[1]<<color;
+                   colorobj[1]<<^length;
+                   colorobj[1]>>collen;
+                   colorobj[1]<<^at<<collen-1;
+                   colorobj[1]>>col;
+                   if col=100 // d=red
+                   then colorobj[1]<<^substr<<1<<collen-5;
+                        colorobj[1]>>amount;
+                        colorobj[1]<<^end;
+                        //c=new console(2 of 2);
+                        //c[1]<<^str<<"  AMOUNT: "<<^str<<amount<<^nl<<^end;
+                        Int intAmount=0;
+                        STRING2INT(amount,intAmount);
+                        if 13<=intAmount // Fail
+                        then ColorsOK(data,shows,colors,true);
+                        else ColorsOK(data,shows,colors,failed);
+                   else if col=110 // n=green
+                   then colorobj[1]<<^substr<<1<<collen-7;
+                        colorobj[1]>>amount;
+                        colorobj[1]<<^end;
+                        //c=new console(2 of 2);
+                        //c[1]<<^str<<"  AMOUNT: "<<^str<<amount<<^nl<<^end;
+                        Int intAmount=0;
+                        STRING2INT(amount,intAmount);
+                        if 14<=intAmount // Fail
+                        then ColorsOK(data,shows,colors,true);
+                        else ColorsOK(data,shows,colors,failed);
+                   else if col=101 // e=blue
+                   then 
+                        //c=new console(2 of 2);
+                        //c[1]<<^str<<"  BLUE COLLEN: "<<^int<<collen<<^nl<<^end;
+                        colorobj[1]<<^substr<<1<<collen-6;
+                        colorobj[1]>>amount;
+                        colorobj[1]<<^end;
+                        //c=new console(2 of 2);
+                        //c[1]<<^str<<"  BLUE AMOUNT: "<<^str<<amount<<^nl<<^end;
+                        Int intAmount=0;
+                        STRING2INT(amount,intAmount);
+                        if 15<=intAmount // Fail
+                        then ColorsOK(data,shows,colors,true);
+                        else ColorsOK(data,shows,colors,failed);
+                   else c=new console(2 of 2);
+                        c[1]<<^str<<"Unknown color in "<<^str<<color<<^nl<<^end;
+                        colorobj[1]<<^end;
+                        ColorsOK(data,shows,colors,failed);
+                 }
+               ) // }}}
+               ColorsOK(data,shows,colors,failed);
+             }
+           ) // }}}
+           GameOK(data,shows,false);
+      else sline[1]<<^end;
+           SumIDs(data,sum);
+     ^None:
+      c=new console(2 of 2);
+      c[1]<<^int<<sum<<^nl<<^end;
+    }
+  ) // }}}
+  SumIDs(f,0);
+ ^Error:
+  f[1]>>err;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+}
