@@ -1,0 +1,178 @@
+#include <sys/file.pi>
+#include <console.pi>
+#include <convert.pi>
+#include "strservice.pi"
+
+#define $ssfindres \
+  1->2: Int; \
+  1->2: $ss(2 of 1 pure,2); \
+  $end;
+#define $ssfind \
+  2->1: $ss(2 of 1 pure,2); \
+  2->1: Int; \
+  $ssfindres
+global $ssfind ssfind(1 pure,2);
+local pure service SsFind(ssfind (1 of 2) s) // {{{
+( s[2]>>ss;
+  s[2]>>char;
+  local pure FindFrom($ssfindres(1 of 1 pure,2) s, $ss(2 of 1 pure,2) ss, Int char, Int pos) // {{{
+  ( ss[1]<<^length;
+    ss[1]>>len;
+    if pos+1<=len
+    then ss[1]<<^at<<pos;
+         ss[1]>>val;
+         if char=val
+         then s[2]<<pos<<ss;
+         else FindFrom(s,ss,char,pos+1);
+    else s[2]<<0-1<<ss;
+  ) // }}}
+  FindFrom(s,ss,char,0);
+) // }}}
+|
+#define $sssplitres \
+  rec $res; \
+  1->2 \
+  {^some: \
+    1->2: String; \
+    $res; \
+   ^none: \
+    1->2: $ss(2 of 1 pure,2); \
+    $end; \
+  }
+#define $sssplit \
+  2->1: $ss(2 of 1 pure,2); \
+  2->1: Int; \
+  $sssplitres
+global $sssplit sssplit(1 pure,2);
+local pure service SsSplit(sssplit (1 of 2) s) // {{{
+( s[2]>>ss;
+  s[2]>>char;
+  local pure SplitFrom($sssplitres(1 of 1 pure,2) s, $ss(2 of 1 pure,2) ss, Int char, Int pos, Int start) // {{{
+  ( ss[1]<<^length;
+    ss[1]>>len;
+    if pos+1<=len
+    then ss[1]<<^at<<pos;
+         ss[1]>>val;
+         if char=val
+         then ss[1]<<^substr<<start<<pos-start;
+              ss[1]>>part;
+              s[2]<<^some<<part;
+              SplitFrom(s,ss,char,pos+1,pos+1);
+         else SplitFrom(s,ss,char,pos+1,start);
+    else ss[1]<<^substr<<start<<pos-start;
+         ss[1]>>part;
+         s[2]<<^some<<part<<^none<<ss;
+  ) // }}}
+  SplitFrom(s,ss,char,0,0);
+) // }}}
+
+|
+f=new file(2 of 2);
+f[1]<<^Read<<"input";
+f[1]>>
+{^OK:
+  local SumPowers($infile(2 of 1,2) data, Int sum) // {{{
+  ( data[1]<<^Line;
+    data[1]>>
+    {^Some:
+      data[1]>>line;
+      sline=new stringobj(2 of 2);
+      sline[1]<<line;
+      sf=new ssfind(2 of 2);
+      sf[1]<<sline<<58;
+      sf[1]>>pos1>>sline;
+      if 6<=pos1
+      then sline[1]<<^substr<<5<<pos1-5;
+           sline[1]>>id;
+           Int intId=0;
+           STRING2INT(id,intId);
+           c=new console(2 of 2);
+           c[1]<<^str<<"ID: "<<^int<<intId<<^str<<" checking..."<<^nl<<^end;
+           sline[1]<<^length;
+           sline[1]>>len;
+           sline[1]<<^substr<<pos1+1<<len-pos1-1;
+           sline[1]>>game;
+           sline[1]<<^end;
+           shows=new sssplit(2 of 2);
+           gameobj=new stringobj(2 of 2);
+           gameobj[1]<<game;
+           shows[1]<<gameobj<<59;
+           local GamePower($infile(2 of 1,2) data, $sssplitres(2 of 1 pure,2) shows, Int r, Int g, Int b) // {{{
+           ( shows[1]>>
+             {^none:
+               shows[1]>>l;
+               l[1]<<^end;
+               c=new console(2 of 2);
+               c[1]<<^str<<"ID: "<<^str<<id<<^str<<" has power: "<<^int<<r*g*b<<^nl<<^end;
+               SumPowers(data,sum+r*g*b);
+              ^some:
+               shows[1]>>cubes;
+               cubesobj=new stringobj(2 of 2);
+               cubesobj[1]<<cubes;
+               colors=new sssplit(2 of 2);
+               colors[1]<<cubesobj<<44;
+               local ColorValues($infile(2 of 1,2) data, $sssplitres(2 of 1 pure,2) shows, $sssplitres(2 of 1 pure,2) colors, Int r, Int g, Int b) // {{{
+               ( colors[1]>>
+                 {^none:
+                   colors[1]>>l;
+                   l[1]<<^end;
+                   GamePower(data,shows,r,g,b);
+                  ^some:
+                   colors[1]>>color;
+                   colorobj=new stringobj(2 of 2);
+                   colorobj[1]<<color;
+                   colorobj[1]<<^length;
+                   colorobj[1]>>collen;
+                   colorobj[1]<<^at<<collen-1;
+                   colorobj[1]>>col;
+                   if col=100 // d=red
+                   then colorobj[1]<<^substr<<1<<collen-5;
+                        colorobj[1]>>amount;
+                        colorobj[1]<<^end;
+                        Int intAmount=0;
+                        STRING2INT(amount,intAmount);
+                        if r<=intAmount // Fail
+                        then ColorValues(data,shows,colors,intAmount,g,b);
+                        else ColorValues(data,shows,colors,r,g,b);
+                   else if col=110 // n=green
+                   then colorobj[1]<<^substr<<1<<collen-7;
+                        colorobj[1]>>amount;
+                        colorobj[1]<<^end;
+                        Int intAmount=0;
+                        STRING2INT(amount,intAmount);
+                        if g<=intAmount // Fail
+                        then ColorValues(data,shows,colors,r,intAmount,b);
+                        else ColorValues(data,shows,colors,r,g,b);
+                   else if col=101 // e=blue
+                   then 
+                        colorobj[1]<<^substr<<1<<collen-6;
+                        colorobj[1]>>amount;
+                        colorobj[1]<<^end;
+                        Int intAmount=0;
+                        STRING2INT(amount,intAmount);
+                        if b<=intAmount // Fail
+                        then ColorValues(data,shows,colors,r,g,intAmount);
+                        else ColorValues(data,shows,colors,r,g,b);
+                   else c=new console(2 of 2);
+                        c[1]<<^str<<"Unknown color in "<<^str<<color<<^nl<<^end;
+                        colorobj[1]<<^end;
+                        ColorValues(data,shows,colors,r,g,b);
+                 }
+               ) // }}}
+               ColorValues(data,shows,colors,r,g,b);
+             }
+           ) // }}}
+           GamePower(data,shows,0,0,0);
+      else sline[1]<<^end;
+           SumPowers(data,sum);
+     ^None:
+      c=new console(2 of 2);
+      c[1]<<^int<<sum<<^nl<<^end;
+    }
+  ) // }}}
+  SumPowers(f,0);
+ ^Error:
+  f[1]>>err;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+}

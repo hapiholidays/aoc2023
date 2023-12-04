@@ -1,0 +1,149 @@
+#include <sys/file.pi>
+#include <console.pi>
+#include <convert.pi>
+#include "strservice.pi"
+String emptyline="............................................................................................................................................";
+#define $findsymbols \
+  2->1: $ss(2 of 1 pure,2); \
+  2->1: Int; \
+  2->1: Int; \
+  1->2: Bool; \
+  1->2: $ss(2 of 1 pure,2); \
+  $end;
+global $findsymbols findsymbols(1 pure,2);
+local pure FindSymbolsService(findsymbols (1 of 2) s) // {{{
+( s[1]>>data>>from>>to;
+  data[1]<<^length;
+  data[1]>>len;
+  if len<=from or to+1<=from
+  then s[2]<<false<<data;
+  else data[1]<<^at<<from;
+       data[1]>>ch;
+       if ch==56 or (48<=ch and ch<=57)
+       then rest=new findsymbols(2 of 2);
+            rest[1]<<data<<from+1<<to;
+            rest[1]>>res>>data;
+            s[2]<<res<<data;
+       else s[2]<<true<<data;
+)
+#define $clearpart \
+  2->1: $ss(2 of 1 pure,2); \
+  2->1: Int; \
+  2->1: Int; \
+  1->2: $ss(2 of 1 pure,2); \
+global $clearpart clearpart(1 pure,2);
+local pure ClearPartService(clearpart (1 of 2) s) // {{{
+( s[2]>>data<<from<<to;
+  data[1]<<^length;
+  data[1]>>len;
+  if len<=from or to+1<=from
+  then s[2]<<data;
+  else data[1]<<^set<<from<<46;
+       clr=new clearpart(2 of 2);
+       clr[1]<<data<<from+1<<to;
+       clr[1]>>data;
+       s[2]<<data;
+) // }}}
+#define $addnumbers \
+  2->1: $ss(2 of 1 pure,2); \
+  2->1: $ss(2 of 1 pure,2); \
+  2->1: Int; \
+  2->1: Int; \
+  1->2: Int; \
+  1->2: $ss(2 of 1 pure,2); \
+  1->2: $ss(2 of 1 pure,2); \
+  $end;
+global $addnumbers addnumbers(1,2);
+local AddNumbersService(addnumbers (1 of 2) s) // {{{
+( s[2]>>line;
+  s[2]>>prev;
+  s[2]>>start;
+  s[2]>>pos;
+  line[1]<<^length;
+  line[1]>>len;
+  // Assume prev and line has same length
+  if len<=pos
+  then if pos<=start
+       then s[2]<<0<<line<<prev;
+       else // Check for adjacent symbols
+            fs=new findsymbols(2 of 2);
+            fs[1]<<line<<if start<=0 then 0 else start-1<<pos;
+            fs[1]>>res1;
+            fs=new findsymbols(2 of 2);
+            fs[1]<<prev<<if start<=0 then 0 else start-1<<pos;
+            fs[1]>>res2;
+            if res1 or res2
+            then prev[1]<<^substr<<start<<pos-start;
+                 prev[1]>>numstr;
+                 Int num=0;
+                 STRING2INT(numstr,num);
+                 s[1]<<num;
+                 clr=new clearpart(2 of 2);
+                 clr[1]<<prev<<start<<pos;
+                 clr[1]>>prev;
+            else s[1]<<0<<prev<<line;
+  else line[1]<<^at<<pos;
+       line[1]>>ch;
+       if 48<=ch and ch<=57 // digit
+       then rest=new addnumbers(2 of 2);
+            rest[1]<<line<<prev<<start<<pos+1;
+            rest[1]>>sum;
+            s[2]<<sum<<line<<prev;
+       else if pos<=start
+            then rest=new addnumbers(2 of 2);
+                 rest[1]<<line<<prev<<pos+1<<pos+1;
+                 rest[1]>>sum;
+                 s[2]<<sum<<line<<prev;
+            else // Check for adjacent symbols
+                 fs=new findsymbols(2 of 2);
+                 fs[1]<<line<<if start<=0 then 0 else start-1<<pos;
+                 fs[1]>>res1;
+                 fs=new findsymbols(2 of 2);
+                 fs[1]<<prev<<if start<=0 then 0 else start-1<<pos;
+                 fs[1]>>res2;
+                 if res1 or res2
+                 then prev[1]<<^substr<<start<<pos-start;
+                      prev[1]>>numstr;
+                      Int num=0;
+                      STRING2INT(numstr,num);
+                      rest=new addnumbers(2 of 2);
+                      rest[1]<<line<<prev<<pos+1<<pos+1;
+                      rest[1]>>sum;
+                      s[1]<<sum+num<<prev<<line;
+                 else rest=new addnumbers(2 of 2);
+                      rest[1]<<line<<prev<<pos+1<<pos+1;
+                      rest[1]>>sum;
+                      s[1]<<sum<<prev<<line;
+) // }}}
+|
+f=new file(2 of 2);
+f[1]<<^Read<<"input";
+f[1]>>
+{^OK:
+  local Do($infile(2 of 1,2) data, $ss(2 of 1 pure,2) prev, Int sum) // {{{
+  ( data[1]<<^Line;
+    data[1]>>
+    {^Some:
+      data[1]>>line;
+      lineobj=new stringobj(2 of 2);
+      lineobj[1]<<line;
+      an=new addnumbers(2 of 2);
+      an[1]<<prev<<lineobj<<0<<0;
+      an[1]>>n1>>prev>>lineobj;
+      an=new addnumbers(2 of 2);
+      an[1]<<lineobj<<prev<<0<<0;
+      an[1]>>n2>>lineobj>>prev;
+      prev[1]<<^end;
+      Do(data,lineobj,sum+n1+n2);
+     ^None:
+      c=new console(2 of 2);
+      c[1]<<^str<<"Sum is "<<^int<<sum<<^nl<<^end;
+  ) // }}}
+  emptyobj=new stringobj(2 of 2);
+  emptyobj[1]<<emptyline;
+  Do(f,emptyobj,0);
+ ^Error:
+  f[1]>>err;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+}

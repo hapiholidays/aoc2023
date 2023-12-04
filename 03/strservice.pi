@@ -1,0 +1,129 @@
+#pragma once
+#define $strobj \
+  2->1: String; \
+  $ss
+
+#define $ss \
+  rec $ss; \
+  2->1 \
+  {^at: \
+    2->1: Int; \
+    1->2: Int; \
+    $ss; \
+   ^set: \
+    2->1: Int; \
+    2->1: Int; \
+    $ss; \
+   ^length: \
+    1->2: Int; \
+    $ss; \
+   ^substr: \
+    2->1: Int; \
+    2->1: Int; \
+    1->2: String; \
+    $ss;\
+   ^end: \
+    $end; \
+  }
+global $strobj stringobj(1 pure,2);
+local pure service StrObj(stringobj (1 of 2) s) // {{{
+( s[2]>>str;
+  local pure StrObj($ss(1 of 1 pure,2) s, String str)
+  ( s[2]>>
+    {^at:
+      s[2]>>pos;
+      Int res=0;
+      HOST("{ size_t _pos=mpz_get_ui(((libpi::Int*)",pos,".get())->GetValue());") pure;
+      HOST("  ",res,".reset(new libpi::Int((long)((libpi::String*)",str,".get())->GetValue()[_pos]));}") pure;
+      s[2]<<res;
+      StrObj(s,str);
+     ^set:
+      s[2]>>pos;
+      s[2]>>char;
+      HOST("{ size_t _pos=mpz_get_ui(((libpi::Int*)",pos,".get())->GetValue());") pure;
+      HOST("  char _ch=(char)mpz_get_ui(((libpi::Int*)",char,".get())->GetValue());") pure;
+      HOST("  ((libpi::String*)",str,".get())->GetValue()[_pos]=_ch;}") pure;
+      StrObj(s,str);
+     ^substr:
+      s[2]>>from;
+      s[2]>>to;
+      String res="";
+      HOST("{ size_t _from=mpz_get_ui(((libpi::Int*)",from,".get())->GetValue());") pure;
+      HOST("  size_t _to=mpz_get_ui(((libpi::Int*)",to,".get())->GetValue());") pure;
+      HOST("  ",res,".reset(new libpi::String(((libpi::String*)",str,".get())->GetValue().substr(_from,_to)));}") pure;
+      s[2]<<res;
+      StrObj(s,str);
+     ^length:
+      Int res=0;
+      HOST("  ",res,".reset(new libpi::Int(((libpi::String*)",str,".get())->GetValue().length()));") pure;
+      s[2]<<res;
+      StrObj(s,str);
+     ^end:
+    }
+  )
+  StrObj(s,str);
+) // }}}
+|
+#define $ssfindres \
+  1->2: Int; \
+  1->2: $ss(2 of 1 pure,2); \
+  $end;
+#define $ssfind \
+  2->1: $ss(2 of 1 pure,2); \
+  2->1: Int; \
+  $ssfindres
+global $ssfind ssfind(1 pure,2);
+local pure service SsFind(ssfind (1 of 2) s) // {{{
+( s[2]>>ss;
+  s[2]>>char;
+  local pure FindFrom($ssfindres(1 of 1 pure,2) s, $ss(2 of 1 pure,2) ss, Int char, Int pos) // {{{
+  ( ss[1]<<^length;
+    ss[1]>>len;
+    if pos+1<=len
+    then ss[1]<<^at<<pos;
+         ss[1]>>val;
+         if char=val
+         then s[2]<<pos<<ss;
+         else FindFrom(s,ss,char,pos+1);
+    else s[2]<<0-1<<ss;
+  ) // }}}
+  FindFrom(s,ss,char,0);
+) // }}}
+|
+#define $sssplitres \
+  rec $res; \
+  1->2 \
+  {^some: \
+    1->2: String; \
+    $res; \
+   ^none: \
+    1->2: $ss(2 of 1 pure,2); \
+    $end; \
+  }
+#define $sssplit \
+  2->1: $ss(2 of 1 pure,2); \
+  2->1: Int; \
+  $sssplitres
+global $sssplit sssplit(1 pure,2);
+local pure service SsSplit(sssplit (1 of 2) s) // {{{
+( s[2]>>ss;
+  s[2]>>char;
+  local pure SplitFrom($sssplitres(1 of 1 pure,2) s, $ss(2 of 1 pure,2) ss, Int char, Int pos, Int start) // {{{
+  ( ss[1]<<^length;
+    ss[1]>>len;
+    if pos+1<=len
+    then ss[1]<<^at<<pos;
+         ss[1]>>val;
+         if char=val
+         then ss[1]<<^substr<<start<<pos-start;
+              ss[1]>>part;
+              s[2]<<^some<<part;
+              SplitFrom(s,ss,char,pos+1,pos+1);
+         else SplitFrom(s,ss,char,pos+1,start);
+    else ss[1]<<^substr<<start<<pos-start;
+         ss[1]>>part;
+         s[2]<<^some<<part<<^none<<ss;
+  ) // }}}
+  SplitFrom(s,ss,char,0,0);
+) // }}}
+|
