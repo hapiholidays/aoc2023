@@ -11,7 +11,7 @@ String emptyline="..............................................................
   1->2: $ss(2 of 1 pure,2); \
   $end;
 global $findsymbols findsymbols(1 pure,2);
-local pure FindSymbolsService(findsymbols (1 of 2) s) // {{{
+local pure service FindSymbolsService(findsymbols (1 of 2) s) // {{{
 ( s[1]>>data>>from>>to;
   data[1]<<^length;
   data[1]>>len;
@@ -19,21 +19,22 @@ local pure FindSymbolsService(findsymbols (1 of 2) s) // {{{
   then s[2]<<false<<data;
   else data[1]<<^at<<from;
        data[1]>>ch;
-       if ch==56 or (48<=ch and ch<=57)
+       if (ch=56) or ((48<=ch) and (ch<=57))
        then rest=new findsymbols(2 of 2);
             rest[1]<<data<<from+1<<to;
             rest[1]>>res>>data;
             s[2]<<res<<data;
        else s[2]<<true<<data;
-)
+) // }}}
+|
 #define $clearpart \
   2->1: $ss(2 of 1 pure,2); \
   2->1: Int; \
   2->1: Int; \
   1->2: $ss(2 of 1 pure,2); \
 global $clearpart clearpart(1 pure,2);
-local pure ClearPartService(clearpart (1 of 2) s) // {{{
-( s[2]>>data<<from<<to;
+local pure service ClearPartService(clearpart (1 of 2) s) // {{{
+( s[2]>>data>>from>>to;
   data[1]<<^length;
   data[1]>>len;
   if len<=from or to+1<=from
@@ -44,6 +45,7 @@ local pure ClearPartService(clearpart (1 of 2) s) // {{{
        clr[1]>>data;
        s[2]<<data;
 ) // }}}
+|
 #define $addnumbers \
   2->1: $ss(2 of 1 pure,2); \
   2->1: $ss(2 of 1 pure,2); \
@@ -54,7 +56,7 @@ local pure ClearPartService(clearpart (1 of 2) s) // {{{
   1->2: $ss(2 of 1 pure,2); \
   $end;
 global $addnumbers addnumbers(1,2);
-local AddNumbersService(addnumbers (1 of 2) s) // {{{
+local service AddNumbersService(addnumbers (1 of 2) s) // {{{
 ( s[2]>>line;
   s[2]>>prev;
   s[2]>>start;
@@ -68,39 +70,39 @@ local AddNumbersService(addnumbers (1 of 2) s) // {{{
        else // Check for adjacent symbols
             fs=new findsymbols(2 of 2);
             fs[1]<<line<<if start<=0 then 0 else start-1<<pos;
-            fs[1]>>res1;
+            fs[1]>>res1>>line;
             fs=new findsymbols(2 of 2);
             fs[1]<<prev<<if start<=0 then 0 else start-1<<pos;
-            fs[1]>>res2;
+            fs[1]>>res2>>prev;
             if res1 or res2
             then prev[1]<<^substr<<start<<pos-start;
                  prev[1]>>numstr;
                  Int num=0;
                  STRING2INT(numstr,num);
-                 s[1]<<num;
                  clr=new clearpart(2 of 2);
                  clr[1]<<prev<<start<<pos;
                  clr[1]>>prev;
-            else s[1]<<0<<prev<<line;
+                 s[2]<<num<<line<<prev;
+            else s[2]<<0<<line<<prev;
   else line[1]<<^at<<pos;
        line[1]>>ch;
-       if 48<=ch and ch<=57 // digit
+       if (48<=ch) and (ch<=57) // digit
        then rest=new addnumbers(2 of 2);
             rest[1]<<line<<prev<<start<<pos+1;
-            rest[1]>>sum;
+            rest[1]>>sum>>line>>prev;
             s[2]<<sum<<line<<prev;
        else if pos<=start
             then rest=new addnumbers(2 of 2);
                  rest[1]<<line<<prev<<pos+1<<pos+1;
-                 rest[1]>>sum;
+                 rest[1]>>sum>>line>>prev;
                  s[2]<<sum<<line<<prev;
             else // Check for adjacent symbols
                  fs=new findsymbols(2 of 2);
                  fs[1]<<line<<if start<=0 then 0 else start-1<<pos;
-                 fs[1]>>res1;
+                 fs[1]>>res1>>line;
                  fs=new findsymbols(2 of 2);
                  fs[1]<<prev<<if start<=0 then 0 else start-1<<pos;
-                 fs[1]>>res2;
+                 fs[1]>>res2>>prev;
                  if res1 or res2
                  then prev[1]<<^substr<<start<<pos-start;
                       prev[1]>>numstr;
@@ -108,11 +110,11 @@ local AddNumbersService(addnumbers (1 of 2) s) // {{{
                       STRING2INT(numstr,num);
                       rest=new addnumbers(2 of 2);
                       rest[1]<<line<<prev<<pos+1<<pos+1;
-                      rest[1]>>sum;
+                      rest[1]>>sum>>line>>prev;
                       s[1]<<sum+num<<prev<<line;
                  else rest=new addnumbers(2 of 2);
                       rest[1]<<line<<prev<<pos+1<<pos+1;
-                      rest[1]>>sum;
+                      rest[1]>>sum>>line>>prev;
                       s[1]<<sum<<prev<<line;
 ) // }}}
 |
@@ -136,8 +138,10 @@ f[1]>>
       prev[1]<<^end;
       Do(data,lineobj,sum+n1+n2);
      ^None:
+      prev[1]<<^end;
       c=new console(2 of 2);
       c[1]<<^str<<"Sum is "<<^int<<sum<<^nl<<^end;
+    }
   ) // }}}
   emptyobj=new stringobj(2 of 2);
   emptyobj[1]<<emptyline;
