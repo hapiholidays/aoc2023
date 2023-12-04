@@ -12,14 +12,14 @@ String emptyline="..............................................................
   $end;
 global $findsymbols findsymbols(1 pure,2);
 local pure service FindSymbolsService(findsymbols (1 of 2) s) // {{{
-( s[1]>>data>>from>>to;
+( s[2]>>data>>from>>to;
   data[1]<<^length;
   data[1]>>len;
-  if len<=from or to+1<=from
+  if (len<=from) or (to+1<=from)
   then s[2]<<false<<data;
   else data[1]<<^at<<from;
        data[1]>>ch;
-       if (ch=56) or ((48<=ch) and (ch<=57))
+       if (ch=46) or ((48<=ch) and (ch<=57))
        then rest=new findsymbols(2 of 2);
             rest[1]<<data<<from+1<<to;
             rest[1]>>res>>data;
@@ -32,12 +32,13 @@ local pure service FindSymbolsService(findsymbols (1 of 2) s) // {{{
   2->1: Int; \
   2->1: Int; \
   1->2: $ss(2 of 1 pure,2); \
+  $end;
 global $clearpart clearpart(1 pure,2);
 local pure service ClearPartService(clearpart (1 of 2) s) // {{{
 ( s[2]>>data>>from>>to;
   data[1]<<^length;
   data[1]>>len;
-  if len<=from or to+1<=from
+  if (len<=from) or (to<=from)
   then s[2]<<data;
   else data[1]<<^set<<from<<46;
        clr=new clearpart(2 of 2);
@@ -75,13 +76,13 @@ local service AddNumbersService(addnumbers (1 of 2) s) // {{{
             fs[1]<<prev<<if start<=0 then 0 else start-1<<pos;
             fs[1]>>res2>>prev;
             if res1 or res2
-            then prev[1]<<^substr<<start<<pos-start;
-                 prev[1]>>numstr;
+            then line[1]<<^substr<<start<<pos-start;
+                 line[1]>>numstr;
                  Int num=0;
                  STRING2INT(numstr,num);
                  clr=new clearpart(2 of 2);
-                 clr[1]<<prev<<start<<pos;
-                 clr[1]>>prev;
+                 clr[1]<<line<<start<<pos;
+                 clr[1]>>line;
                  s[2]<<num<<line<<prev;
             else s[2]<<0<<line<<prev;
   else line[1]<<^at<<pos;
@@ -104,18 +105,22 @@ local service AddNumbersService(addnumbers (1 of 2) s) // {{{
                  fs[1]<<prev<<if start<=0 then 0 else start-1<<pos;
                  fs[1]>>res2>>prev;
                  if res1 or res2
-                 then prev[1]<<^substr<<start<<pos-start;
-                      prev[1]>>numstr;
+                 then line[1]<<^substr<<start<<pos-start;
+                      line[1]>>numstr;
+                      Int num=0;
                       Int num=0;
                       STRING2INT(numstr,num);
+                      clr=new clearpart(2 of 2);
+                      clr[1]<<line<<start<<pos;
+                      clr[1]>>line;
                       rest=new addnumbers(2 of 2);
                       rest[1]<<line<<prev<<pos+1<<pos+1;
                       rest[1]>>sum>>line>>prev;
-                      s[1]<<sum+num<<prev<<line;
+                      s[2]<<sum+num<<line<<prev;
                  else rest=new addnumbers(2 of 2);
                       rest[1]<<line<<prev<<pos+1<<pos+1;
                       rest[1]>>sum>>line>>prev;
-                      s[1]<<sum<<prev<<line;
+                      s[2]<<sum<<line<<prev;
 ) // }}}
 |
 f=new file(2 of 2);
