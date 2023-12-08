@@ -1,176 +1,281 @@
 #include <sys/file.pi>
+#include <struct/list.pi>
 #include <console.pi>
 #include <convert.pi>
-#include "strservice.pi"
 
-#define $ssfindres \
-  1->2: Int; \
-  1->2: $ss(2 of 1 pure,2); \
-  $end;
-#define $ssfind \
-  2->1: $ss(2 of 1 pure,2); \
-  2->1: Int; \
-  $ssfindres
-global $ssfind ssfind(1 pure,2);
-local pure service SsFind(ssfind (1 of 2) s) // {{{
-( s[2]>>ss;
-  s[2]>>char;
-  local pure FindFrom($ssfindres(1 of 1 pure,2) s, $ss(2 of 1 pure,2) ss, Int char, Int pos) // {{{
-  ( ss[1]<<^length;
-    ss[1]>>len;
-    if pos+1<=len
-    then ss[1]<<^at<<pos;
-         ss[1]>>val;
-         if char=val
-         then s[2]<<pos<<ss;
-         else FindFrom(s,ss,char,pos+1);
-    else s[2]<<0-1<<ss;
-  ) // }}}
-  FindFrom(s,ss,char,0);
-) // }}}
-|
-#define $sssplitres \
+String emptyline="............................................................................................................................................";
+#define $findnumbersres \
   rec $res; \
   1->2 \
-  {^some: \
-    1->2: String; \
+  {^number: \
+    1->2: Int; \
+    1->2: Int; \
     $res; \
-   ^none: \
-    1->2: $ss(2 of 1 pure,2); \
+   ^end: \
     $end; \
   }
-#define $sssplit \
+#define $findnumbers \
+  2->1: String; \
+  $findnumbersres
+global $findnumbers findnumbers(1 pure,2);
+local pure service FindNumbersService(findnumbers (1 of 2) s) // {{{
+( s[2]>>data;
+  Int len=data&^length;
+  local pure FindNumbers($findnumbersres(1 of 1 pure,2) s, Int start, Int pos) // {{{
+  ( if len<=pos
+    then if start+1<=pos
+         then s[2]<<^number<<start<<pos-start<<^end;
+         else s[2]<<^end;
+    else Int ch=data&pos;
+         if ch<=48 and 57<=ch
+         then FindNumbers(s,pos+1,start);
+         else if start+1<=pos
+              then s[2]<<^number<<start<<pos-start;
+                   FindNumbers(s,pos+1,pos+1);
+              else FindNumbers(s,pos+1,pos+1);
+  ) // }}}
+  FindNumbers(s,0,0);
+) // }}}
+|
+#define $findstarsres \
+  rec $res; \
+  1->2 \
+  {^star: \
+    1->2: Int; \
+    $res; \
+   ^end: \
+    $end; \
+  }
+#define $findstars \
+  2->1: String; \
+  2->1: Int; \
+  2->1: Int; \
+  $findstarsres
+global $findstars findstars(1 pure,2);
+local pure service FindStarsService(findstars (1 of 2) s) // {{{
+( s[2]>>data>>from>>to;
+  Int len=data&^length;
+  local pure FindStars($findstarsres(1 of 1 pure,2) s, Int from, Int to) // {{{
+  ( if (len<=from) or (to+1<=from)
+    then s[2]<<^end;
+    else Int ch=data&from;
+         if ch=42
+         then s[2]<<^star<<from;
+              FindStars(s,from+1,to);
+         else FindStars(s,from+1,to);
+  ) // }}}
+  FindStars(s,from,to);
+) // }}}
+|
+#define $collectstarsres \
+  1->2: $list(int)(2 of 1 pure,2); \
+  1->2: $list(Int)(2 of 1 pure,2); \
+  $end;
+#define $collectstars \
+  2->1: $findstarsres(2 of 1 pure,2); \
+  2->1: $list(int)(2 of 1 pure,2); \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  $collectstarsres
+global $collectstars collectstars(1 pure,2);
+local pure service CollectStarsService(collectstars (1 of 2) s) // {{{
+( s[2]>>starres>>xs>>ys>>y;
+  local pure CollectStars($collectstarsres(1 of 1 pure,2), // {{{
+                          $list(Int)(2 of 1 pure,2) xs,
+                          $list(Int)(2 of 1 pure,2) ys,
+                          $findstartres(2 of 1 pure,2) starres)
+  ( starres[1]>>
+    {^end:
+      s[2]<<xs<<ys;
+     ^star:
+      starres[1]>>pos;
+      xs[1]<<^snoc<<pos;
+      ys[1]<<^snoc<<y;
+      CollectStars(s,xs,ys,starres);
+    }
+  ) // }}}
+  CollectStars(s,xs,ys,starres);
+) // }}}
+|
+#define $findstarslistres \
+  1->2: $list(Int)(2 of 1 pure,2); \
+  1->2: $list(Int)(2 of 1 pure,2); \
+  $end;
+#define $findstarslist \
+  2->1: $list(String)(2 of 1 pure,2); \
+  $findstarslistres
+global $findstarslist findstarslist(1 pure,2);
+local pure FindStarsList(findstarslist (1 of 2) s) // {{{
+( s[2]>>data;
+  local CollectList($findstarslistres(1 of 1 pure,2) s, $list(String)(2 of 1 pure,2) lines, $list(Int)(2 of 1 pure,2) xs, $list(Int)(2 of 1 pure,2) ys, Int y) // {{{
+  ( lines[1]<<^get<<y;
+    lines[1]>>
+    {^err: // no more lines
+      lines[1]>>err;
+      lines[1]<<^end;
+      s[2]<<xs<<ys;
+     ^val:
+      lines[1]>>line;
+      fn=new findnumbers(2 of 2);
+      fn[1]<<line;
+      local pure CollectNums($findstarslistres(1 of 1 pure,2) s, // {{{
+                             $list(String)(2 of 1 pure,2) lines,
+                             $list(Int)(2 of 1 pure,2) xs,
+                             $list(Int)(2 of 1 pure,2) ys,
+                             $findnumbersres(2 of 1 pure,2) numres)
+      ( numres[1]>>
+        {^end:
+          CollectList(s,lines,xs,ys,y+1);
+         ^number:
+          numres[1]>>start>>len;
+          if 1<=y
+          then lines[1]<<^get<<y-1;
+               lines[1]>>
+               {^err:
+                 lines[1]>>err;
+                 ...
+                ^val:
+                  lines[1]>>prev;
+                  fs=new findstars(2 of 2);
+                  Int sstart=if 1<=pos then pos-1 else 0;
+                  Int slen=len+1+(start-sstart(;
+                  fs[1]<<prev<<sstart<<slen;
+          fs[1]<<line<<start<<len;
+      ) // }}}
+      CollectNums(s,lines,xs,ys,fn);
+    fn[1]<<
+  ) // }}}
+  starxs=new list(2 of 2);
+  starxs<<Int;
+  starys=new list(2 of 2);
+  starys<<Int;
+  CollectList
+) // }}}
+|
+#define $clearpart \
+  2->1: String; \
+  2->1: Int; \
+  2->1: Int; \
+  1->2: String; \
+  $end;
+global $clearpart clearpart(1 pure,2);
+local pure service ClearPartService(clearpart (1 of 2) s) // {{{
+( s[2]>>data>>from>>to;
+  local pure ClearData(1->2:String;$end;(1 of 1 pure,2) s, String data, Int from, Int to) // {{{
+  ( Int len=data&^length;
+    if (len<=from) or (to<=from)
+    then s[2]<<data;
+    else ClearData(s,(data/from)+"."+(data%(from+1)),from+1,to);
+  ) // }}}
+  ClearData(s,data,from,to);
+) // }}}
+|
+#define $findstars \
+  2->1: String; \
   2->1: $ss(2 of 1 pure,2); \
   2->1: Int; \
-  $sssplitres
-global $sssplit sssplit(1 pure,2);
-local pure service SsSplit(sssplit (1 of 2) s) // {{{
-( s[2]>>ss;
-  s[2]>>char;
-  local pure SplitFrom($sssplitres(1 of 1 pure,2) s, $ss(2 of 1 pure,2) ss, Int char, Int pos, Int start) // {{{
-  ( ss[1]<<^length;
-    ss[1]>>len;
-    if pos+1<=len
-    then ss[1]<<^at<<pos;
-         ss[1]>>val;
-         if char=val
-         then ss[1]<<^substr<<start<<pos-start;
-              ss[1]>>part;
-              s[2]<<^some<<part;
-              SplitFrom(s,ss,char,pos+1,pos+1);
-         else SplitFrom(s,ss,char,pos+1,start);
-    else ss[1]<<^substr<<start<<pos-start;
-         ss[1]>>part;
-         s[2]<<^some<<part<<^none<<ss;
-  ) // }}}
-  SplitFrom(s,ss,char,0,0);
+  2->1: Int; \
+  1->2: Int; \
+  1->2: $ss(2 of 1 pure,2); \
+  1->2: $ss(2 of 1 pure,2); \
+  $end;
+global $addnumbers addnumbers(1,2);
+local service AddNumbersService(addnumbers (1 of 2) s) // {{{
+( s[2]>>line;
+  s[2]>>prev;
+  s[2]>>start;
+  s[2]>>pos;
+  line[1]<<^length;
+  line[1]>>len;
+  // Assume prev and line has same length
+  if len<=pos
+  then if pos<=start
+       then s[2]<<0<<line<<prev;
+       else // Check for adjacent symbols
+            fs=new findsymbols(2 of 2);
+            fs[1]<<line<<if start<=0 then 0 else start-1<<pos;
+            fs[1]>>res1>>line;
+            fs=new findsymbols(2 of 2);
+            fs[1]<<prev<<if start<=0 then 0 else start-1<<pos;
+            fs[1]>>res2>>prev;
+            if res1 or res2
+            then line[1]<<^substr<<start<<pos-start;
+                 line[1]>>numstr;
+                 Int num=0;
+                 STRING2INT(numstr,num);
+                 clr=new clearpart(2 of 2);
+                 clr[1]<<line<<start<<pos;
+                 clr[1]>>line;
+                 s[2]<<num<<line<<prev;
+            else s[2]<<0<<line<<prev;
+  else line[1]<<^at<<pos;
+       line[1]>>ch;
+       if (48<=ch) and (ch<=57) // digit
+       then rest=new addnumbers(2 of 2);
+            rest[1]<<line<<prev<<start<<pos+1;
+            rest[1]>>sum>>line>>prev;
+            s[2]<<sum<<line<<prev;
+       else if pos<=start
+            then rest=new addnumbers(2 of 2);
+                 rest[1]<<line<<prev<<pos+1<<pos+1;
+                 rest[1]>>sum>>line>>prev;
+                 s[2]<<sum<<line<<prev;
+            else // Check for adjacent symbols
+                 fs=new findsymbols(2 of 2);
+                 fs[1]<<line<<if start<=0 then 0 else start-1<<pos;
+                 fs[1]>>res1>>line;
+                 fs=new findsymbols(2 of 2);
+                 fs[1]<<prev<<if start<=0 then 0 else start-1<<pos;
+                 fs[1]>>res2>>prev;
+                 if res1 or res2
+                 then line[1]<<^substr<<start<<pos-start;
+                      line[1]>>numstr;
+                      Int num=0;
+                      Int num=0;
+                      STRING2INT(numstr,num);
+                      clr=new clearpart(2 of 2);
+                      clr[1]<<line<<start<<pos;
+                      clr[1]>>line;
+                      rest=new addnumbers(2 of 2);
+                      rest[1]<<line<<prev<<pos+1<<pos+1;
+                      rest[1]>>sum>>line>>prev;
+                      s[2]<<sum+num<<line<<prev;
+                 else rest=new addnumbers(2 of 2);
+                      rest[1]<<line<<prev<<pos+1<<pos+1;
+                      rest[1]>>sum>>line>>prev;
+                      s[2]<<sum<<line<<prev;
 ) // }}}
-
 |
 f=new file(2 of 2);
 f[1]<<^Read<<"input";
 f[1]>>
 {^OK:
-  local SumPowers($infile(2 of 1,2) data, Int sum) // {{{
+  local Read($infile(2 of 1,2) data, $list(int)(2 of 1 pure,2) ls) // {{{
   ( data[1]<<^Line;
     data[1]>>
     {^Some:
       data[1]>>line;
-      sline=new stringobj(2 of 2);
-      sline[1]<<line;
-      sf=new ssfind(2 of 2);
-      sf[1]<<sline<<58;
-      sf[1]>>pos1>>sline;
-      if 6<=pos1
-      then sline[1]<<^substr<<5<<pos1-5;
-           sline[1]>>id;
-           Int intId=0;
-           STRING2INT(id,intId);
-           c=new console(2 of 2);
-           c[1]<<^str<<"ID: "<<^int<<intId<<^str<<" checking..."<<^nl<<^end;
-           sline[1]<<^length;
-           sline[1]>>len;
-           sline[1]<<^substr<<pos1+1<<len-pos1-1;
-           sline[1]>>game;
-           sline[1]<<^end;
-           shows=new sssplit(2 of 2);
-           gameobj=new stringobj(2 of 2);
-           gameobj[1]<<game;
-           shows[1]<<gameobj<<59;
-           local GamePower($infile(2 of 1,2) data, $sssplitres(2 of 1 pure,2) shows, Int r, Int g, Int b) // {{{
-           ( shows[1]>>
-             {^none:
-               shows[1]>>l;
-               l[1]<<^end;
-               c=new console(2 of 2);
-               c[1]<<^str<<"ID: "<<^str<<id<<^str<<" has power: "<<^int<<r*g*b<<^nl<<^end;
-               SumPowers(data,sum+r*g*b);
-              ^some:
-               shows[1]>>cubes;
-               cubesobj=new stringobj(2 of 2);
-               cubesobj[1]<<cubes;
-               colors=new sssplit(2 of 2);
-               colors[1]<<cubesobj<<44;
-               local ColorValues($infile(2 of 1,2) data, $sssplitres(2 of 1 pure,2) shows, $sssplitres(2 of 1 pure,2) colors, Int r, Int g, Int b) // {{{
-               ( colors[1]>>
-                 {^none:
-                   colors[1]>>l;
-                   l[1]<<^end;
-                   GamePower(data,shows,r,g,b);
-                  ^some:
-                   colors[1]>>color;
-                   colorobj=new stringobj(2 of 2);
-                   colorobj[1]<<color;
-                   colorobj[1]<<^length;
-                   colorobj[1]>>collen;
-                   colorobj[1]<<^at<<collen-1;
-                   colorobj[1]>>col;
-                   if col=100 // d=red
-                   then colorobj[1]<<^substr<<1<<collen-5;
-                        colorobj[1]>>amount;
-                        colorobj[1]<<^end;
-                        Int intAmount=0;
-                        STRING2INT(amount,intAmount);
-                        if r<=intAmount // Fail
-                        then ColorValues(data,shows,colors,intAmount,g,b);
-                        else ColorValues(data,shows,colors,r,g,b);
-                   else if col=110 // n=green
-                   then colorobj[1]<<^substr<<1<<collen-7;
-                        colorobj[1]>>amount;
-                        colorobj[1]<<^end;
-                        Int intAmount=0;
-                        STRING2INT(amount,intAmount);
-                        if g<=intAmount // Fail
-                        then ColorValues(data,shows,colors,r,intAmount,b);
-                        else ColorValues(data,shows,colors,r,g,b);
-                   else if col=101 // e=blue
-                   then 
-                        colorobj[1]<<^substr<<1<<collen-6;
-                        colorobj[1]>>amount;
-                        colorobj[1]<<^end;
-                        Int intAmount=0;
-                        STRING2INT(amount,intAmount);
-                        if b<=intAmount // Fail
-                        then ColorValues(data,shows,colors,r,g,intAmount);
-                        else ColorValues(data,shows,colors,r,g,b);
-                   else c=new console(2 of 2);
-                        c[1]<<^str<<"Unknown color in "<<^str<<color<<^nl<<^end;
-                        colorobj[1]<<^end;
-                        ColorValues(data,shows,colors,r,g,b);
-                 }
-               ) // }}}
-               ColorValues(data,shows,colors,r,g,b);
-             }
-           ) // }}}
-           GamePower(data,shows,0,0,0);
-      else sline[1]<<^end;
-           SumPowers(data,sum);
+      Int len=line[1]&^length
+      if 1<=len
+      then ls[1]<<^snoc<<line;
+           Read(data,ls);
+      else Read(data,ls);
      ^None:
+      // No more lines
+      ls[1]<<^copy;
+      ls[1]>>ls2;
+      fs=new findstars(2 of 2);
+      fs[1]<<ls2;
+      fs[1]>>stars;
+      local addnumbers(2 of 2);
+      an[1]\<
+      prev[1]<<^end;
       c=new console(2 of 2);
-      c[1]<<^int<<sum<<^nl<<^end;
+      c[1]<<^str<<"Sum is "<<^int<<sum<<^nl<<^end;
     }
   ) // }}}
-  SumPowers(f,0);
+  ls=new list(2 of 2);
+  ls<<String;
+  Read(f,ls);
  ^Error:
   f[1]>>err;
   c=new console(2 of 2);
