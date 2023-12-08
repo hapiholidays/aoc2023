@@ -107,7 +107,11 @@ local service AddNumbersService(addnumbers (1 of 2) s) // {{{
                  if res1 or res2
                  then line[1]<<^substr<<start<<pos-start;
                       line[1]>>numstr;
-                      Int num=0;
+                      c=new console(2 of 2);
+                      line[1]<<^substr<<0<<len;
+                      line[1]>>d;
+                      c[1]<<^str<<d<<^str<<" substring "<<^int<<start<<^str<<"->"<<^int<<pos<<^nl;
+                      c[1]<<^str<<"numstr="<<^str<<numstr<<^nl<<^end;
                       Int num=0;
                       STRING2INT(numstr,num);
                       clr=new clearpart(2 of 2);
