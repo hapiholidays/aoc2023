@@ -1,0 +1,257 @@
+#include <sys/file.pi>
+#include <struct/list.pi>
+#include <console.pi>
+#include <convert.pi>
+
+#define $printints \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  $end;
+global $printints printints(1,2);
+local service PrintIntsService(printints (1 of 2) this) // {{{
+( this[2]>>ints;
+  c=new console(2 of 2);c[1]<<^str<<"[";
+  local PrintInts($list(Int)(2 of 1 pure,2) ints, Bool first, $console(2 of 1,2) c) // {{{
+  ( ints[1]<<^pop;
+    ints[1]>>
+    {^nil:
+      c[1]<<^str<<"]"<<^nl<<^end;
+     ^cons:
+      ints[1]>>head>>tail;
+      c[1]<<^str<<if not first then ", " else ""<<^int<<head;
+      PrintInts(tail,false,c);
+    }
+  ) // }}}
+  PrintInts(ints,true,c);
+) // }}}
+|
+#define $strfind \
+  2->1: String; \
+  2->1: String; \
+  1->2: Int; \
+  $end;
+global $strfind strfind(1 pure,2);
+local pure service StrFindService(strfind (1 of 2) this) // {{{
+( this[2]>>data;
+  this[2]>>pat;
+  Int patlen=pat&^length;
+  if patlen<=0
+  then this[2]<<0;
+  else Int datalen=data&^length;
+       local pure StrFind(1->2:Int;$end;(1 of 1 pure,2) this, Int pos) // {{{
+       ( if datalen+1<=pos+patlen
+         then this[2]<<0-1;
+         else if (data%pos)/patlen=pat
+              then this[2]<<pos;
+              else StrFind(this,pos+1);
+       ) // }}}
+       StrFind(this,0);
+) // }}}
+|
+#define $intfind \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  2->1: Int; \
+  1->2: Bool; \
+  $end;
+global $intfind intfind(1 pure,2);
+local pure service FindIntService(intfind (1 of 2) this) // {{{
+( this[2]>>xs;
+  this[2]>>x;
+  local pure FindInt(1->2:Bool;$end;(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) xs) // {{{
+  ( xs[1]<<^pop;
+    xs[1]>>
+    {^nil:
+      this[2]<<false;
+     ^cons:
+      xs[1]>>head>>tail;
+      if head=x
+      then tail[1]<<^end;
+           this[2]<<true;
+      else FindInt(this,tail);
+    }
+  ) // }}}
+  FindInt(this,xs);
+) // }}}
+|
+#define $parsenumsres \
+  1->2: $list(Int)(2 of 1 pure,2); \
+  $end;
+#define $parsenums \
+  2->1: String; \
+  $parsenumsres
+global $parsenums parsenums(1 pure,2);
+local pure service ParseNumsService(parsenums (1 of 2) this) // {{{
+( this[2]>>numsstr;
+  Int len=numsstr&^length;
+  local pure ParseNums($parsenumsres(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) nums, Int pos) // {{{
+  ( fs=new strfind(2 of 2);
+    fs[1]<<numsstr%pos<<" ";
+    fs[1]>>pos2;
+    if pos2+1<=0
+    then Int num=0;
+         String numstr=numsstr%pos;
+         STRING2INT(numstr,num) pure;
+         nums[1]<<^snoc<<num;
+         this[2]<<nums;
+    else if pos2<=0
+         then ParseNums(this,nums,pos+1);
+         else Int num=0;
+              String numstr=(numsstr%pos)/pos2;
+              STRING2INT(numstr,num) pure;
+              nums[1]<<^snoc<<num;
+              ParseNums(this,nums,pos+pos2+1);
+  ) // }}}
+  nums=new list(2 of 2);
+  nums<<Int;
+  ParseNums(this,nums,0);
+) // }}}
+|
+#define $applymapres \
+  1->2: $list(Int)(2 of 1 pure,2); \
+  1->2: $list(Int)(2 of 1 pure,2); \
+  $end;
+#define $applymap \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  $applymapres
+global $applymap applymap(1 pure,2);
+local pure service ApplyMapService(applymap (1 of 2) this) // {{{
+( this[2]>>map>>in>>out;
+  local pure ApplyMap($applymapres(1 of 1 pure,2) this, // {{{
+                      $list(Int)(2 of 1 pure,2) map,
+                      $list(Int)(2 of 1 pure,2) in,
+                      $list(Int)(2 of 1 pure,2) out,
+                      Int pos)
+  ( in[1]<<^length;
+    in[1]>>inlen;
+    if inlen<=pos
+    then this[2]<<in<<out;
+         map[1]<<^end;
+    else in[1]<<^get<<pos;
+         in[1]>>
+         {^err:
+           HOST("cout << \"Err1\" << endl;") pure;
+           in[1]>>err;
+           this[2]<<in<<out;
+           map[1]<<^end;
+          ^val:
+           in[1]>>elt;
+           map[1]<<^get<<1;
+           map[1]>>
+           {^err:
+             HOST("cout << \"Err2\" << endl;") pure;
+             map[1]>>err;
+             this[2]<<in<<out;
+             map[1]<<^end;
+            ^val:
+             map[1]>>src;
+             map[1]<<^get<<2;
+             map[1]>>
+             {^err:
+               HOST("cout << \"Err3\" << endl;") pure;
+               map[1]>>err;
+               this[2]<<in<<out;
+               map[1]<<^end;
+              ^val:
+               map[1]>>range;
+               if (src<=elt) and (elt+1<=src+range)
+               then // map matches
+                    map[1]<<^get<<0;
+                    map[1]>>
+                    {^err:
+                      map[1]>>err;
+                      this[2]<<in<<out;
+                      map[1]<<^end;
+                     ^val:
+                      map[1]>>dst;
+                      Int res=dst+(elt-src);
+                      HOST("cout << \"Map: \" << ((libpi::Int*)",dst,".get())->ToString() << \" \" << ((libpi::Int*)",src,".get())->ToString() << \" \" << ((libpi::Int*)",range,".get())->ToString() << endl;") pure;
+                      HOST("cout << \"Map input: \" << ((libpi::Int*)",elt,".get())->ToString() << endl;") pure;
+                      HOST("cout << \"Map result: \" << ((libpi::Int*)",res,".get())->ToString() << endl;") pure;
+                      out[1]<<^snoc<<res;
+                      in[1]<<^erase<<pos;
+                      ApplyMap(this,map,in,out,pos);
+                    }
+               else // map misses
+                    ApplyMap(this,map,in,out,pos+1);
+             }
+           }
+         }
+  ) // }}}
+  ApplyMap(this,map,in,out,0);
+) // }}}
+|
+f=new file(2 of 2);
+f[1]<<^Read<<"input";
+f[1]>>
+{^OK:
+  f[1]<<^Line;
+  f[1]>>
+  {^Some:
+    f[1]>>seedsline;
+    sf=new strfind(2 of 2);
+    sf[1]<<seedsline<<": ";
+    sf[1]>>pos;
+    if pos+1<=0
+    then f[1]<<^Close;
+         c=new console(2 of 2);
+         c[1]<<^str<<"Error: no colon in line 1"<<^nl<<^end;
+    else String seedsstr=seedsline%(pos+1);
+         c=new console(2 of 2);
+         c[1]<<^str<<"Debug: seedsstr="<<^str<<seedsstr<<^nl<<^end;
+         ps=new parsenums(2 of 2);
+         ps[1]<<seedsstr;
+         ps[1]>>seeds;
+         //f[1]<<^Close;
+         //pi=new printints(2 of 2);
+         //pi[1]<<seeds;
+         local Read($infile(2 of 1,2) maps, $list(Int)(2 of 1 pure,2) in, $list(Int)(2 of 1 pure,2) out) // {{{
+         ( maps[1]<<^Line;
+           maps[1]>>
+           {^Some:
+             maps[1]>>mapstr;
+             Int len=mapstr&^length;
+             if len<=0
+             then // map done, move inputs to outputs
+                  out[1]<<^append<<in;
+                  out[1]<<^copy;
+                  out[1]>>outcpy;
+                  pi=new printints(2 of 2);
+                  pi[1]<<outcpy;
+                  nout=new list(2 of 2);
+                  nout<<Int;
+                  Read(maps,out,nout);
+             else sf=new strfind(2 of 2);
+                  sf[1]<<mapstr<<":";
+                  sf[1]>>pos;
+                  if pos+1<=0
+                  then // not map header
+                       ps=new parsenums(2 of 2);
+                       ps[1]<<mapstr;
+                       ps[1]>>map;
+                       // Assume map length is 3
+                       am=new applymap(2 of 2);
+                       am[1]<<map<<in<<out;
+                       am[1]>>in>>out;
+                       Read(maps,in,out);
+                  else // ignore map header
+                       Read(maps,in,out);
+            ^None:
+             // No more maps
+             out[1]<<^append<<in;
+             pi=new printints(2 of 2);
+             pi[1]<<out;
+           }
+         ) // }}}
+         out=new list(2 of 2);
+         out<<Int;
+         Read(f,seeds,out);
+   ^None:
+    c=new console(2 of 2);
+    c[1]<<^str<<"Error: No lines"<<^nl<<^end;
+  }
+ ^Error:
+  f[1]>>err;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+}
