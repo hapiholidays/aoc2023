@@ -165,9 +165,6 @@ local pure service ApplyMapService(applymap (1 of 2) this) // {{{
                      ^val:
                       map[1]>>dst;
                       Int res=dst+(elt-src);
-                      HOST("cout << \"Map: \" << ((libpi::Int*)",dst,".get())->ToString() << \" \" << ((libpi::Int*)",src,".get())->ToString() << \" \" << ((libpi::Int*)",range,".get())->ToString() << endl;") pure;
-                      HOST("cout << \"Map input: \" << ((libpi::Int*)",elt,".get())->ToString() << endl;") pure;
-                      HOST("cout << \"Map result: \" << ((libpi::Int*)",res,".get())->ToString() << endl;") pure;
                       out[1]<<^snoc<<res;
                       in[1]<<^erase<<pos;
                       ApplyMap(this,map,in,out,pos);
@@ -197,8 +194,6 @@ f[1]>>
          c=new console(2 of 2);
          c[1]<<^str<<"Error: no colon in line 1"<<^nl<<^end;
     else String seedsstr=seedsline%(pos+1);
-         c=new console(2 of 2);
-         c[1]<<^str<<"Debug: seedsstr="<<^str<<seedsstr<<^nl<<^end;
          ps=new parsenums(2 of 2);
          ps[1]<<seedsstr;
          ps[1]>>seeds;
