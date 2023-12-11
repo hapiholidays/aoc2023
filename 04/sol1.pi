@@ -1,0 +1,216 @@
+#include <sys/file.pi>
+#include <struct/list.pi>
+#include <console.pi>
+#include <convert.pi>
+
+#define $printints \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  $end;
+global $printints printints(1,2);
+local service PrintIntsService(printints (1 of 2) this) // {{{
+( this[2]>>ints;
+  c=new console(2 of 2);c[1]<<^str<<"[";
+  local PrintInts($list(Int)(2 of 1 pure,2) ints, Bool first, $console(2 of 1,2) c) // {{{
+  ( ints[1]<<^pop;
+    ints[1]>>
+    {^nil:
+      c[1]<<^str<<"]"<<^nl<<^end;
+     ^cons:
+      ints[1]>>head>>tail;
+      c[1]<<^str<<if not first then ", " else ""<<^int<<head;
+      PrintInts(tail,false,c);
+    }
+  ) // }}}
+  PrintInts(ints,true,c);
+) // }}}
+|
+#define $strfind \
+  2->1: String; \
+  2->1: String; \
+  1->2: Int; \
+  $end;
+global $strfind strfind(1 pure,2);
+local pure service StrFindService(strfind (1 of 2) this) // {{{
+( this[2]>>data;
+  this[2]>>pat;
+  Int patlen=pat&^length;
+  if patlen<=0
+  then this[2]<<0;
+  else Int datalen=data&^length;
+       local pure StrFind(1->2:Int;$end;(1 of 1 pure,2) this, Int pos) // {{{
+       ( if datalen+1<=pos+patlen
+         then this[2]<<0-1;
+         else if (data%pos)/patlen=pat
+              then this[2]<<pos;
+              else StrFind(this,pos+1);
+       ) // }}}
+       StrFind(this,0);
+) // }}}
+|
+#define $intfind \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  2->1: Int; \
+  1->2: Bool; \
+  $end;
+global $intfind intfind(1 pure,2);
+local pure service FindIntService(intfind (1 of 2) this) // {{{
+( this[2]>>xs;
+  this[2]>>x;
+  local pure FindInt(1->2:Bool;$end;(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) xs) // {{{
+  ( xs[1]<<^pop;
+    xs[1]>>
+    {^nil:
+      this[2]<<false;
+     ^cons:
+      xs[1]>>head>>tail;
+      if head=x
+      then tail[1]<<^end;
+           this[2]<<true;
+      else FindInt(this,tail);
+    }
+  ) // }}}
+  FindInt(this,xs);
+) // }}}
+|
+#define $parsenumsres \
+  1->2: $list(Int)(2 of 1 pure,2); \
+  $end;
+#define $parsenums \
+  2->1: String; \
+  $parsenumsres
+global $parsenums parsenums(1 pure,2);
+local pure service ParseNumsService(parsenums (1 of 2) this) // {{{
+( this[2]>>numsstr;
+  Int len=numsstr&^length;
+  local pure ParseNums($parsenumsres(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) nums, Int pos) // {{{
+  ( fs=new strfind(2 of 2);
+    fs[1]<<numsstr%pos<<" ";
+    fs[1]>>pos2;
+    if pos2+1<=0
+    then Int num=0;
+         String numstr=numsstr%pos;
+         STRING2INT(numstr,num) pure;
+         nums[1]<<^cons<<num;
+         this[2]<<nums;
+    else if pos2<=0
+         then ParseNums(this,nums,pos+1);
+         else Int num=0;
+              String numstr=(numsstr%pos)/pos2;
+              STRING2INT(numstr,num) pure;
+              nums[1]<<^cons<<num;
+              ParseNums(this,nums,pos+pos2+1);
+  ) // }}}
+  nums=new list(2 of 2);
+  nums<<Int;
+  ParseNums(this,nums,0);
+) // }}}
+|
+#define $cpoints \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  1->2: Int; \
+  $end;
+global $cpoints cpoints(1 pure,2);
+local pure service CPointsService(cpoints (1 of 2) this) // {{{
+( this[2]>>wnums>>mnums;
+  local pure CPoints(1->2:Int;$end;(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) wnums, $list(Int)(2 of 1 pure,2) mnums, Int points) // {{{
+  ( mnums[1]<<^pop;
+    mnums[1]>>
+    {^nil:
+      wnums[1]<<^end;
+      this[2]<<points;
+     ^cons:
+      mnums[1]>>head>>tail;
+      wnums[1]<<^copy;
+      wnums[1]>>ws;
+      f=new intfind(2 of 2);
+      f[1]<<ws<<head;
+      f[1]>>res;
+      if res
+      then CPoints(this,wnums,tail,if points<=0 then 1 else points*2);
+      else CPoints(this,wnums,tail,points);
+    }
+  ) // }}}
+  CPoints(this,wnums,mnums,0);
+) // }}}
+|
+#define $calcpoints \
+  2->1: String; \
+  1->2: Int; \
+  $end;
+global $calcpoints calcpoints(1 ,2);
+local service CalcPointsService(calcpoints (1 of 2) this) // {{{
+( this[2]>>line;
+  f1=new strfind(2 of 2);
+  f1[1]<<line<<":";
+  f1[1]>>pos;
+  if pos+1<=0
+  then this[2]<<0;
+  else String cardstr=line%(pos+2);
+       f2=new strfind(2 of 2);
+       f2[1]<<cardstr<<" | ";
+       f2[1]>>pos;
+       if pos+1<=0
+       then this[2]<<0;
+       else String winstr=cardstr/pos;
+            String mystr=cardstr%(pos+3);
+            pn1=new parsenums(2 of 2);
+            pn1[1]<<winstr;
+            pn1[1]>>winnums;
+            pn2=new parsenums(2 of 2);
+            pn2[1]<<mystr;
+            pn2[1]>>mynums;
+            cp=new cpoints(2 of 2);
+            cp[1]<<winnums<<mynums;
+            cp[1]>>points;
+            //pi1=new printints(2 of 2);
+            //pi1[1]<<winnums;
+            //pi2=new printints(2 of 2);
+            //pi2[1]<<mynums;
+            c=new console(2 of 2); c[1]<<^str<<cardstr<<^str<<" has points="<<^int<<points<<^nl<<^end;
+            this[2]<<points;
+) // }}}
+|
+f=new file(2 of 2);
+f[1]<<^Read<<"input";
+f[1]>>
+{^OK:
+  local Read($infile(2 of 1,2) data, $list(String)(2 of 1 pure,2) ls) // {{{
+  ( data[1]<<^Line;
+    data[1]>>
+    {^Some:
+      data[1]>>line;
+      Int len=line&^length;
+      if 1<=len
+      then ls[1]<<^snoc<<line;
+           Read(data,ls);
+      else Read(data,ls);
+     ^None:
+      // No more lines
+      local Do($list(String)(2 of 1 pure,2) data, Int line, Int sum) // {{{
+      ( data[1]<<^get<<line;
+        data[1]>>
+        {^err:
+          data[1]>>err;
+          c=new console(2 of 2);
+          c[1]<<^str<<"Sum is "<<^int<<sum<<^nl<<^end;
+          data[1]<<^end;
+         ^val:
+          data[1]>>str;
+          cp=new calcpoints(2 of 2);
+          cp[1]<<str;
+          cp[1]>>points;
+          Do(data,line+1,sum+points);
+        }
+      ) // }}}
+      Do(ls,0,0);
+    }
+  ) // }}}
+  ls=new list(2 of 2);
+  ls<<String;
+  Read(f,ls);
+ ^Error:
+  f[1]>>err;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+}
