@@ -370,7 +370,6 @@ local pure service AddBoxLabelService(addboxlabel (1 of 2) this) // {{{
   2->1:$linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
   $addlabelres
 global $addlabel addlabel(1 pure,2);
-|
 local pure service AddLabelService(addlabel (1 of 2) this) // {{{
 ( this[2]>>idx>>lbl>>val>>labels>>values;
   labels[1]<<^pop;
@@ -441,7 +440,7 @@ local pure service UpdateBoxesService(updateboxes (1 of 2) this) // {{{
        h[1]>>lblhash;
        String valstr=cmd%(pos+1);
        Int val=0;
-       STRING2INT(valstr,val);
+       STRING2INT(valstr,val) pure;
        al=new addlabel(2 of 2);
        al[1]<<lblhash<<lbl<<val<<labels<<values;
        al[1]>>labels>>values;

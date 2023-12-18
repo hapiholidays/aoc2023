@@ -31,7 +31,7 @@ $(name1): $(name1).cpp
 
 $(name1).cpp: $(name1).pip
 	@echo "=== Compiling $(name1).pip to $(name1).cpp"
-	$(HAPI) -compile -optimize -f $(name1).pip > $(name1).cpp
+	$(HAPI) -compile -f $(name1).pip > $(name1).cpp
 
 $(name1).pip: $(name1).pi
 	@echo "=== Preprocessing $(name1).pi to $(name1).pip"
@@ -43,7 +43,7 @@ $(name2): $(name2).cpp
 
 $(name2).cpp: $(name2).pip
 	@echo "=== Compiling $(name2).pip to $(name2).cpp"
-	$(HAPI) -compile -optimize -f $(name2).pip > $(name2).cpp
+	$(HAPI) -compile -f $(name2).pip > $(name2).cpp
 
 $(name2).pip: $(name2).pi
 	@echo "=== Preprocessing $(name2).pi to $(name2).pip"
