@@ -1,0 +1,118 @@
+#include <sys/file.pi>
+#include <struct/list.pi>
+#include <struct/set.pi>
+#include <console.pi>
+#include <convert.pi>
+
+#define $printset \
+  2->1: $set(String)(2 of 1 pure,2); \
+  $end;
+global $printset printset(1,2);
+local service PrintSetService(printset (1 of 2) this) // {{{
+( this[2]>>elts;
+  elts[1]<<^Dissolve;
+  elts[1]>>
+  {^Empty:
+   ^NonEmpty:
+    elts[1]>>elt>>elts1>>elts2;
+    c=new console(2 of 2);
+    c[1]<<^str<<elt<<^str<<", "<<^end;
+    ps1=new printset(2 of 2);
+    ps1[1]<<elts1;
+    ps2=new printset(2 of 2);
+    ps2[1]<<elts2;
+  }
+) // }}}
+| 
+#define $almostdisjunktres \
+  1->2:Int; \
+  1->2:Int; \
+  $end;
+#define $almostdisjunkt \
+  2->1:$list(String)(2 of 1 pure,2); \
+  2->1:$list(String)(2 of 1 pure,2); \
+  $almostdisjunktres
+//global $almostdisjunkt almostdisjunkt(1 pure,2);
+//local pure service AlmostDisjunktService(almostdisjunkt (1 of 2) this) // {{{
+//( this[2]>>lnodes>>rnodes;
+//  local AlmostDisjunkt($list(String)(2 of 1 pure,2) lnodes,
+//                       $list(String)(2 of 1 pure,2) rnodes,
+//                       Int e1, Int e2, Int e3)
+//  ( 
+//  )
+//  AlmostDisjunkt(lnodes,rnodes,0,1,2);
+//) // }}}
+//|
+global AlmostDisjunkt($list(String)(2 of 1 pure,2) lnodes, // {{{
+                      $list(String)(2 of 1 pure,2) rnodes)
+( local MakeSet($list(String)(2 of 1 pure,2) lnodes, // {{{
+                $list(String)(2 of 1 pure,2) rnodes,
+                $set(String)(2 of 1 pure,2) res)
+  ( lnodes[1]<<^pop;
+    lnodes[1]>>
+    {^nil:
+      rnodes[1]<<^end;
+      res[1]<<^Size;
+      res[1]>>size;
+      c=new console(2 of 2);
+      c[1]<<^str<<"Number of nodes: "<<^int<<size<<^nl<<^end;
+      ps=new printset(2 of 2);
+      ps[1]<<res;
+     ^cons:
+      lnodes[1]>>e1>>t1;
+      res[1]<<^Insert<<e1;
+      rnodes[1]<<^pop;
+      rnodes[1]>>
+      {^nil:
+        t1[1]<<^end;
+        ps=new printset(2 of 2);
+        ps[1]<<res;
+       ^cons:
+        rnodes[1]>>e2>>t2;
+        res[1]<<^Insert<<e2;
+        MakeSet(t1,t2,res);
+      }
+    }
+  ) // }}}
+  elts=new set(2 of 2);
+  elts<<String;
+  elts[1]<<stdorder_String;
+  MakeSet(lnodes,rnodes,elts);
+) // }}}
+f=new file(2 of 2);
+f[1]<<^Read<<"input";
+f[1]>>
+{^OK:
+  local Read($infile(2 of 1,2) f, $list(String)(2 of 1 pure,2) lnodes, $list(String)(2 of 1 pure,2) rnodes) // {{{
+  ( f[1]<<^Line;
+    f[1]>>
+    {^Some:
+      local AddNodes($infile(2 of 1,2) f, $list(String)(2 of 1 pure,2) lnodes, $list(String)(2 of 1 pure,2) rnodes, String ln, String rns)
+      ( if rns=""
+        then Read(f,lnodes,rnodes);
+        else String rn=rns/3;
+             lnodes[1]<<^snoc<<ln;
+             rnodes[1]<<^snoc<<rn;
+             String rnstail=if rns&^length<=4 then "" else rns%4;
+             AddNodes(f,lnodes,rnodes,ln,rnstail);
+      )
+      f[1]>>line;
+      if line&^length<=0
+      then Read(f,lnodes,rnodes);
+      else String ln=line/3;
+           String rns=line%5;
+           AddNodes(f,lnodes,rnodes,ln,rns);
+     ^None:
+      AlmostDisjunkt(lnodes,rnodes);
+    }
+  ) // }}}
+  lnodes=new list(2 of 2);
+  lnodes<<String;
+  rnodes=new list(2 of 2);
+  rnodes<<String;
+  Read(f,lnodes,rnodes);
+ ^Error:
+  f[1]>>err;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+}
