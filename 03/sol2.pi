@@ -3,7 +3,6 @@
 #include <console.pi>
 #include <convert.pi>
 
-//String emptyline="............................................................................................................................................";
 #define $findnumbersres \
   rec $res; \
   1->2 \
@@ -37,68 +36,6 @@ local pure service FindNumbersService(findnumbers (1 of 2) s) // {{{
   FindNumbers(s,0,0);
 ) // }}}
 |
-#define $findstarsres \
-  rec $res; \
-  1->2 \
-  {^star: \
-    1->2: Int; \
-    $res; \
-   ^end: \
-    $end; \
-  }
-#define $findstars \
-  2->1: String; \
-  2->1: Int; \
-  2->1: Int; \
-  $findstarsres
-global $findstars findstars(1 pure,2);
-local pure service FindStarsService(findstars (1 of 2) s) // {{{
-( s[2]>>data>>from>>to;
-  Int len=data&^length;
-  local pure FindStars($findstarsres(1 of 1 pure,2) s, Int from, Int to) // {{{
-  ( if from+1<=0
-    then FindStars(s,from+1,to);
-    else if (len<=from) or (to+1<=from)
-         then s[2]<<^end;
-         else Int ch=data&from;
-              if ch=42
-              then s[2]<<^star<<from;
-                   FindStars(s,from+1,to);
-              else FindStars(s,from+1,to);
-  ) // }}}
-  FindStars(s,from,to);
-) // }}}
-|
-#define $collectstarsres \
-  1->2: $list(Int)(2 of 1 pure,2); \
-  1->2: $list(Int)(2 of 1 pure,2); \
-  $end;
-#define $collectstars \
-  2->1: $findstarsres(2 of 1 pure,2); \
-  2->1: $list(Int)(2 of 1 pure,2); \
-  2->1: $list(Int)(2 of 1 pure,2); \
-  2->1: Int; \
-  $collectstarsres
-global $collectstars collectstars(1 pure,2);
-local pure service CollectStarsService(collectstars (1 of 2) s) // {{{
-( s[2]>>starres>>xs>>ys>>y;
-  local pure CollectStars($collectstarsres(1 of 1 pure,2) s, // {{{
-                          $list(Int)(2 of 1 pure,2) xs,
-                          $list(Int)(2 of 1 pure,2) ys,
-                          $findstarsres(2 of 1 pure,2) starres)
-  ( starres[1]>>
-    {^end:
-      s[2]<<xs<<ys;
-     ^star:
-      starres[1]>>pos;
-      xs[1]<<^snoc<<pos;
-      ys[1]<<^snoc<<y;
-      CollectStars(s,xs,ys,starres);
-    }
-  ) // }}}
-  CollectStars(s,xs,ys,starres);
-) // }}}
-|
 #define $findstarslistres \
   1->2: $list(Int)(2 of 1 pure,2); \
   1->2: $list(Int)(2 of 1 pure,2); \
@@ -108,161 +45,49 @@ local pure service CollectStarsService(collectstars (1 of 2) s) // {{{
   $findstarslistres
 global $findstarslist findstarslist(1 pure,2);
 local pure service FindStarsList(findstarslist (1 of 2) s) // {{{
-( s[2]>>data;
-  local CollectList($findstarslistres(1 of 1 pure,2) s, $list(String)(2 of 1 pure,2) lines, $list(Int)(2 of 1 pure,2) xs, $list(Int)(2 of 1 pure,2) ys, Int y) // {{{
-  ( lines[1]<<^get<<y;
-    lines[1]>>
-    {^err: // no more lines
-      lines[1]>>err;
-      lines[1]<<^end;
-      s[2]<<xs<<ys;
-     ^val:
-      lines[1]>>line;
-      fn=new findnumbers(2 of 2);
-      fn[1]<<line;
-      local pure CollectNums($findstarslistres(1 of 1 pure,2) s, // {{{
-                             $list(String)(2 of 1 pure,2) lines,
-                             $list(Int)(2 of 1 pure,2) xs,
-                             $list(Int)(2 of 1 pure,2) ys,
-                             $findnumbersres(2 of 1 pure,2) numres)
-      ( numres[1]>>
-        {^end:
-          CollectList(s,lines,xs,ys,y+1);
-         ^number:
-          numres[1]>>start>>len;
-          fs1=new findstars(2 of 2);
-          fs1[1]<<lines<<y-1<<pos-1<<len+2;
-          cs1=new collectstars(2 of 2);
-          cs1[1]<<fs1<<xs<<ys;
-          cs1[1]>>xs>>ys;
-          fs2=new findstars(2 of 2);
-          fs2[1]<<lines<<y<<pos-1<<len+2;
-          cs2=new collectstars(2 of 2);
-          cs2[1]<<fs2<<xs<<ys;
-          cs2[1]>>xs>>ys;
-          fs3=new findstars(2 of 2);
-          fs3[1]<<lines<<y+1<<pos-1<<len+2;
-          cs3=new collectstars(2 of 2);
-          cs3[1]<<fs3<<xs<<ys;
-          cs3[1]>>xs>>ys;
-          CollectNums(s,lines,xs,ys,numres);
-        }
+( local pure FindStars($findstarslistres(1 of 1 pure,2) this, // {{{
+                       $list(String)(2 of 1 pure,2) data,
+                       $list(Int)(2 of 1 pure,2) xs,
+                       $list(Int)(2 of 1 pure,2) ys,
+                       Int y)
+  ( data[1]<<^pop;
+    data[1]>>
+    {^cons:
+      data[1]>>line;
+      data[1]>>dtail;
+      Int len=line&^length;
+      local pure FindStarsLine($findstarslistres(1 of 1 pure,2) this, // {{{
+                               $list(String)(2 of 1 pure,2) data,
+                               $list(Int)(2 of 1 pure,2) xs,
+                               $list(Int)(2 of 1 pure,2) ys,
+                               Int x)
+      ( if len<=x
+        then FindStars(this,data,xs,ys,y+1);
+        else String cur=(line%x)/1;
+             if cur="*"
+             then xs[1]<<^snoc<<x;
+                  ys[1]<<^snoc<<y;
+                  FindStarsLine(this,data,xs,ys,x+1);
+             else FindStarsLine(this,data,xs,ys,x+1);
       ) // }}}
-      CollectNums(s,lines,xs,ys,fn);
+      FindStarsLine(this,dtail,xs,ys,0);
+     ^nil:
+      this[2]<<xs<<ys;
     }
   ) // }}}
-  starxs=new list(2 of 2);
-  starxs<<Int;
-  starys=new list(2 of 2);
-  starys<<Int;
-  CollectList(s,lines,starxs,starys,0);
-) // }}}
-|
-/*
-#define $clearpart \
-  2->1: String; \
-  2->1: Int; \
-  2->1: Int; \
-  1->2: String; \
-  $end;
-global $clearpart clearpart(1 pure,2);
-local pure service ClearPartService(clearpart (1 of 2) s) // {{{
-( s[2]>>data>>from>>to;
-  local pure ClearData(1->2:String;$end;(1 of 1 pure,2) s, String data, Int from, Int to) // {{{
-  ( Int len=data&^length;
-    if (len<=from) or (to<=from)
-    then s[2]<<data;
-    else ClearData(s,(data/from)+"."+(data%(from+1)),from+1,to);
-  ) // }}}
-  ClearData(s,data,from,to);
-) // }}}
-|
-#define $countanderaseres \
-  1->2: Int; \
-  1->2: $list(Int)(2 of 1 pure,2); \
-  1->2: $list(Int)(2 of 1 pure,2); \
-  $end;
-#define $countanderase \
-  2->1: $list(Int)(2 of 1 pure,2); \
-  2->1: $list(Int)(2 of 1 pure,2); \
-  2->1: Int; \
-  2->1: Int; \
-  2->1: Int; \
-  $countanderaseres
-global $countanderase countanderase(1 pure,2);
-local service CountAndEraseService(countanderase (1 of 2) s) // {{{
-( s[1]>>xs>>ys>>x>>y>>pos;
-  local CountAndErase($countanderaseres(1 of 1 pure,2) s, $list(Int)(2 of 1 pure,2) xs, $list(Int)(2 of 1 pure,2) ys, Int x, Int y, Int pos, Int count) // {{{
-  ( xs[1]<<^get<<pos;
-    xs[1]>>
-    {^err:
-      xs[1]>>err;
-      s[1]<<count<<xs<<ys;
-     ^val:
-      xs[1]>>tx;
-      ys[1]<<^get<<pos;
-      ys[1]>>
-      {^err:
-        ys[1]>>err;
-        s[1]<<count<<xs<<ys;
-       ^val:
-        ys[1]>>ty;
-        if (x=tx) and (y=ty)
-        then xs[1]<<^erase<<pos;
-             ys[1]<<^erase<<pos;
-             CountAndErase(s,xs,ys,x,y,pos,count+1);
-        else CountAndErase(s,xs,ys,x,y,pos+1,count);
-      }
-    }
-  ) // }}}
-  CountAndErase(s,xs,ys,x,y,pos,0);
-) // }}}
-|
-#define $filterstarsres \
-  1->2: $list(Int)(2 of 1 pure,2); \
-  1->2: $list(Int)(2 of 1 pure,2); \
-  $end;
-#define $filterstars \
-  2->1: $list(Int)(2 of 1 pure,2); \
-  2->1: $list(Int)(2 of 1 pure,2); \
-  $filterstarsres
-global $filterstars filterstars(1 pure,2);
-local service FilterStarsService(filterstars (1 of 2) s) // {{{
-( s[1]>>xs>>ys;
-  local pure FilterStars($filterstarsres(1 of 1 pure,2) s, $list(Int)(2 of 1 pure,2) xs, $list(Int)(2 of 1 pure,2) ys, Int pos) // {{{
-  ( xs[1]<<^get<<pos;
-    xs[1]>>
-    {^err:
-      xs[1]>>err;
-      s[1]<<xs<<ys;
-     ^val:
-      xs[1]>>x;
-      ys[1]<<^get<<pos;
-      ys[1]>>
-      {^err:
-        ys[1]>>err;
-        s[1]<<xs<<ys;
-       ^val:
-        ys[1]>>y;
-        cne=new countanderase(2 of 2);
-        cne[1]<<xs<<ys<<x<<y<<pos+1;
-        cne[1]>>count>>xs>>ys;
-        if count=1 // One extra, so 2
-        then FilterStars(s,xs,ys,pos+1);
-        else xs[1]<<^erase<<pos;
-             ys[1]<<^erase<<pos;
-             FilterStars(s,xs,ys,pos);
-      }
-    }
-  ) // }}}
-  FilterStars(s,xs,ys,0);
+  s[2]>>data;
+  xs=new list(2 of 2);
+  xs<<Int;
+  ys=new list(2 of 2);
+  ys<<Int;
+  FindStars(s,data,xs,ys,0);
 ) // }}}
 |
 f=new file(2 of 2);
 f[1]<<^Read<<"input";
 f[1]>>
 {^OK:
-  local Read($infile(2 of 1,2) data, $list(Int)(2 of 1 pure,2) ls) // {{{
+  local Read($infile(2 of 1,2) data, $list(String)(2 of 1 pure,2) ls) // {{{
   ( data[1]<<^Line;
     data[1]>>
     {^Some:
@@ -276,12 +101,13 @@ f[1]>>
       // No more lines
       ls[1]<<^copy;
       ls[1]>>ls2;
+      ls[1]<<^end;
       fs=new findstarslist(2 of 2);
       fs[1]<<ls2;
       fs[1]>>starxs>>starys;
-      sf=new filterstars(2 of 2);
-      sf[1]<<starxs<<starys;
-      sf[1]>>gearxs>>gearys;
+      //sf=new filterstars(2 of 2);
+      //sf[1]<<starxs<<starys;
+      //sf[1]>>gearxs>>gearys;
       // Fix here
       local PrintPositions($list(Int)(2 of 1 pure,2) xs, $list(Int)(2 of 1 pure,2) ys) // {{{
       ( xs[1]<<^pop;
@@ -302,7 +128,7 @@ f[1]>>
           }
         }
       ) // }}} 
-      PrintPositions(gearxs,gearys);
+      PrintPositions(starxs,starys);
       //ap=new addproducts(2 of 2);
       //ap[1]<<stars;
       //ap[1]>>sum;
@@ -318,4 +144,3 @@ f[1]>>
   c=new console(2 of 2);
   c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
 }
-*/
