@@ -1,0 +1,467 @@
+#include <sys/file.pi>
+#include <struct/list.pi>
+#include <console.pi>
+
+#define $printints \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  $end;
+global $printints printints(1,2);
+local service PrintIntsService(printints (1 of 2) this) // {{{
+( this[2]>>ints;
+  c=new console(2 of 2);c[1]<<^str<<"[";
+  local PrintInts($list(Int)(2 of 1 pure,2) ints, Bool first, $console(2 of 1,2) c) // {{{
+  ( ints[1]<<^pop;
+    ints[1]>>
+    {^nil:
+      c[1]<<^str<<"]"<<^nl<<^end;
+     ^cons:
+      ints[1]>>head>>tail;
+      c[1]<<^str<<if not first then ", " else ""<<^int<<head;
+      PrintInts(tail,false,c);
+    }
+  ) // }}}
+  PrintInts(ints,true,c);
+) // }}}
+| 
+#define $initfieldsres \
+  $list(Int)
+#define $initfields \
+  2->1:Int; \
+  $initfieldsres
+global $initfields initfields(1 pure,2);
+local pure service InitFieldsService(initfields (1 of 2) this) // {{{
+( this[2]>>maplength;
+  local pure InitFields($initfieldsres(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) res, Int c) // {{{
+  ( if c<=0
+    then res[1]<<^takeover<<this;
+    else res[1]<<^cons<<0;
+         InitFields(this,res,c-1);
+  ) // }}}
+  res=new list(2 of 2);
+  res<<Int;
+  InitFields(this,res,maplength);
+) // }}}
+|
+#define $simulatelightres \
+  1->2:$list(Int)(2 of 1 pure,2); \
+  1->2:$list(Int)(2 of 1 pure,2); \
+  1->2:$list(Int)(2 of 1 pure,2); \
+  1->2:$list(Int)(2 of 1 pure,2); \
+  1->2:$list(Int)(2 of 1 pure,2); \
+  $end;
+#define $simulatelight \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:Int; \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:Int; \
+  2->1:Int; \
+  2->1:Int; \
+  $simulatelightres
+global $simulatelight simulatelight(1 pure,2);
+local pure service SimulateLightService(simulatelight (1 of 2) this) // {{{
+( this[2]>>map>>mapwidth>>lfields>>rfields>>ufields>>dfields>>x>>y>>dir;
+  HOST("cout << \"Sim(\" << ((libpi::Int*)",x,".get())->ToString() << \",\" << ((libpi::Int*)",y,".get())->ToString() << \",\" << ((libpi::Int*)",dir,".get())->ToString() << \")\" << endl;") pure;
+  map[1]<<^length;
+  map[1]>>mapsize;
+  Int mapheight=mapsize/mapwidth;
+  Int idx=mapwidth*y+x;
+  if (x+1<=0) or (y+1<=0) or (mapwidth<=x) or (mapheight<=y)
+  then // out of map
+       this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+  else if dir=0
+       then // left {{{
+            lfields[1]<<^get<<idx;
+            lfields[1]>>
+            {^err:
+              lfields[1]>>err;
+              HOST("cout << \"Error: out of lfields!\" << endl;") pure;
+              this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+             ^val:
+              lfields[1]>>field;
+              if 1<=field
+              then // Already marked
+                   this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+              else // 
+                   lfields[1]<<^set<<idx<<1; // Mark to avoid infinite recursion
+                   map[1]<<^get<<idx;
+                   map[1]>>
+                   {^err:
+                     map[1]>>err;
+                     HOST("cout << \"Error: out of map!\" << endl;") pure;
+                     this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                    ^val:
+                     map[1]>>field;
+                     if field=1 // /
+                     then Int nx=x;
+                          Int ny=y+1;
+                          Int ndir=3;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else if field=2 // "\"
+                     then Int nx=x;
+                          Int ny=y-1;
+                          Int ndir=2;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else if field=4 // |
+                     then Int nx=x;
+                          Int ny1=y-1;
+                          Int ny2=y+1;
+                          Int ndir1=2;
+                          Int ndir2=3;
+                          sl1=new simulatelight(2 of 2);
+                          sl1[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny1<<ndir1;
+                          sl1[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          sl2=new simulatelight(2 of 2);
+                          sl2[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny2<<ndir2;
+                          sl2[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else // remaining are if (field=0) or (field=3) // . or -
+                          Int nx=x-1;
+                          Int ny=y;
+                          Int ndir=dir;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                   }
+            } // }}}
+       else if dir=1
+       then // right {{{
+            rfields[1]<<^get<<idx;
+            rfields[1]>>
+            {^err:
+              rfields[1]>>err;
+              HOST("cout << \"Error: out of rfields!\" << endl;") pure;
+              this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+             ^val:
+              rfields[1]>>field;
+              if 1<=field
+              then // Already marked
+                   this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+              else // 
+                   rfields[1]<<^set<<idx<<1; // Mark to avoid infinite recursion
+                   map[1]<<^get<<idx;
+                   map[1]>>
+                   {^err:
+                     map[1]>>err;
+                     HOST("cout << \"Error: out of map!\" << endl;") pure;
+                     this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                    ^val:
+                     map[1]>>field;
+                     if field=1 // /
+                     then Int nx=x;
+                          Int ny=y-1;
+                          Int ndir=2;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else if field=2 // "\"
+                     then Int nx=x;
+                          Int ny=y+1;
+                          Int ndir=3;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else if field=4 // |
+                     then Int nx=x;
+                          Int ny1=y-1;
+                          Int ny2=y+1;
+                          Int ndir1=2;
+                          Int ndir2=3;
+                          sl1=new simulatelight(2 of 2);
+                          sl1[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny1<<ndir1;
+                          sl1[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          sl2=new simulatelight(2 of 2);
+                          sl2[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny2<<ndir2;
+                          sl2[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else // remaining are if (field=0) or (field=3) // . or -
+                          Int nx=x+1;
+                          Int ny=y;
+                          Int ndir=dir;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                   }
+            } // }}}
+       else if dir=2
+       then // up {{{
+            ufields[1]<<^get<<idx;
+            ufields[1]>>
+            {^err:
+              ufields[1]>>err;
+              HOST("cout << \"Error: out of ufields!\" << endl;") pure;
+              this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+             ^val:
+              ufields[1]>>field;
+              if 1<=field
+              then // Already marked
+                   this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+              else // 
+                   ufields[1]<<^set<<idx<<1; // Mark to avoid infinite recursion
+                   map[1]<<^get<<idx;
+                   map[1]>>
+                   {^err:
+                     map[1]>>err;
+                     HOST("cout << \"Error: out of map!\" << endl;") pure;
+                     this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                    ^val:
+                     map[1]>>field;
+                     if field=1 // /
+                     then Int nx=x+1;
+                          Int ny=y;
+                          Int ndir=1;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else if field=2 // "\"
+                     then Int nx=x-1;
+                          Int ny=y;
+                          Int ndir=0;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else if field=3 // -
+                     then Int nx1=x-1;
+                          Int nx2=x+1;
+                          Int ny=y;
+                          Int ndir1=0;
+                          Int ndir2=1;
+                          sl1=new simulatelight(2 of 2);
+                          sl1[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx1<<ny<<ndir1;
+                          sl1[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          sl2=new simulatelight(2 of 2);
+                          sl2[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx2<<ny<<ndir2;
+                          sl2[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else // remaining are if (field=0) or (field=4) // . or |
+                          Int nx=x;
+                          Int ny=y-1;
+                          Int ndir=dir;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                   }
+            } // }}}
+       else //if dir=3
+            // down {{{
+            dfields[1]<<^get<<idx;
+            dfields[1]>>
+            {^err:
+              dfields[1]>>err;
+              HOST("cout << \"Error: out of dfields!\" << endl;") pure;
+              this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+             ^val:
+              dfields[1]>>field;
+              if 1<=field
+              then // Already marked
+                   this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+              else // 
+                   dfields[1]<<^set<<idx<<1; // Mark to avoid infinite recursion
+                   map[1]<<^get<<idx;
+                   map[1]>>
+                   {^err:
+                     map[1]>>err;
+                     HOST("cout << \"Error: out of map!\" << endl;") pure;
+                     this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                    ^val:
+                     map[1]>>field;
+                     if field=1 // /
+                     then Int nx=x-1;
+                          Int ny=y;
+                          Int ndir=0;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else if field=2 // "\"
+                     then Int nx=x+1;
+                          Int ny=y;
+                          Int ndir=1;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else if field=3 // -
+                     then Int nx1=x-1;
+                          Int nx2=x+1;
+                          Int ny=y;
+                          Int ndir1=0;
+                          Int ndir2=1;
+                          sl1=new simulatelight(2 of 2);
+                          sl1[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx1<<ny<<ndir1;
+                          sl1[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          sl2=new simulatelight(2 of 2);
+                          sl2[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx2<<ny<<ndir2;
+                          sl2[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                     else // remaining are if (field=0) or (field=4) // . or |
+                          Int nx=x;
+                          Int ny=y+1;
+                          Int ndir=dir;
+                          sl=new simulatelight(2 of 2);
+                          sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<nx<<ny<<ndir;
+                          sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+                          this[2]<<lfields<<rfields<<ufields<<dfields<<map;
+                   }
+            } // }}}
+) // }}}
+|
+#define $countfieldsres\
+  1->2:Int; \
+  $end;
+#define $countfields \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  $countfieldsres
+global $countfields countfields(1,2);
+local service CountFieldsService(countfields (1 of 2) this) // {{{
+( this[2]>>lfields>>rfields>>ufields>>dfields;
+  lfields[1]<<^pop;
+  lfields[1]>>
+  {^nil:
+    rfields[1]<<^end;
+    ufields[1]<<^end;
+    dfields[1]<<^end;
+    this[2]<<0;
+   ^cons:
+    lfields[1]>>lfield>>ltail;
+    rfields[1]<<^pop;
+    rfields[1]>>
+    {^nil:
+      ltail[1]<<^end;
+      ufields[1]<<^end;
+      dfields[1]<<^end;
+      this[2]<<0;
+     ^cons:
+      rfields[1]>>rfield>>rtail;
+      ufields[1]<<^pop;
+      ufields[1]>>
+      {^nil:
+        ltail[1]<<^end;
+        rtail[1]<<^end;
+        dfields[1]<<^end;
+        this[2]<<0;
+       ^cons:
+        ufields[1]>>ufield>>utail;
+        dfields[1]<<^pop;
+        dfields[1]>>
+        {^nil:
+          ltail[1]<<^end;
+          rtail[1]<<^end;
+          utail[1]<<^end;
+          this[2]<<0;
+         ^cons:
+          dfields[1]>>dfield>>dtail;
+          Int fieldval=if (1<=lfield) or (1<=rfield) or (1<=ufield) or (1<=dfield) then 1 else 0;
+          cf=new countfields(2 of 2);
+          cf[1]<<ltail<<rtail<<utail<<dtail;
+          cf[1]>>tailcount;
+          this[2]<<tailcount+fieldval;
+        }
+      }
+    }
+  }
+) // }}}
+|
+f=new file(2 of 2);
+f[1]<<^Read<<"input";
+f[1]>>
+{^OK:
+  local Read($infile(2 of 1,2) f, $list(Int)(2 of 1 pure,2) map, Int mapwidth) // {{{
+  ( f[1]<<^Line;
+    f[1]>>
+    {^Some:
+      local AddMapLine($infile(2 of 1,2) f, $list(Int)(2 of 1 pure,2) map, Int mapwidth, String line)
+      ( Int len=line&^length;
+        Int mapwidth2=if mapwidth<=len then len else mapwidth;
+        if len<=0
+        then Read(f,map,mapwidth);
+        else String field=line/1;
+             if field="."
+             then map[1]<<^snoc<<0; // Add empty field
+                  AddMapLine(f,map,mapwidth2,line%1);
+             else if field="/"
+             then map[1]<<^snoc<<1; // Add / mirror
+                  AddMapLine(f,map,mapwidth2,line%1);
+             else if field="\\"
+             then map[1]<<^snoc<<2; // Add \ mirror
+                  AddMapLine(f,map,mapwidth2,line%1);
+             else if field="-"
+             then map[1]<<^snoc<<3; // Add - splitter
+                  AddMapLine(f,map,mapwidth2,line%1);
+             else if field="|"
+             then map[1]<<^snoc<<4; // Add | splitter
+                  AddMapLine(f,map,mapwidth2,line%1);
+             else c=new console(2 of 2);
+                  c[1]<<^str<<"Error: Unknown field "<<^str<<field<<^nl<<^end;
+                  AddMapLine(f,map,mapwidth2,line%1);
+      )
+      f[1]>>line;
+      AddMapLine(f,map,mapwidth,line);
+     ^None:
+      map[1]<<^length;
+      map[1]>>maplength;
+      lfields=new initfields(2 of 2);
+      lfields[1]<<maplength;
+      rfields=new initfields(2 of 2);
+      rfields[1]<<maplength;
+      ufields=new initfields(2 of 2);
+      ufields[1]<<maplength;
+      dfields=new initfields(2 of 2);
+      dfields[1]<<maplength;
+      sl=new simulatelight(2 of 2);
+      sl[1]<<map<<mapwidth<<lfields<<rfields<<ufields<<dfields<<0<<0<<1;
+      sl[1]>>lfields>>rfields>>ufields>>dfields>>map;
+      map[1]<<^end;
+      //lfields[1]<<^copy;
+      //lfields[1]>>l;
+      //pi=new printints(2 of 2);
+      //pi[1]<<l;
+
+      //rfields[1]<<^copy;
+      //rfields[1]>>r;
+      //pi=new printints(2 of 2);
+      //pi[1]<<r;
+
+      //ufields[1]<<^copy;
+      //ufields[1]>>u;
+      //pi=new printints(2 of 2);
+      //pi[1]<<u;
+
+      //dfields[1]<<^copy;
+      //dfields[1]>>d;
+      //pi=new printints(2 of 2);
+      //pi[1]<<d;
+
+      cf=new countfields(2 of 2);
+      cf[1]<<lfields<<rfields<<ufields<<dfields;
+      cf[1]>>count;
+      c=new console(2 of 2);
+      c[1]<<^str<<"Number of energized fields: "<<^int<<count<<^nl<<^end;
+    }
+  ) // }}}
+  map=new list(2 of 2);
+  map<<Int;
+  Read(f,map,0);
+ ^Error:
+  f[1]>>err;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+}

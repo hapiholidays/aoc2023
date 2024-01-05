@@ -1,0 +1,569 @@
+#include <sys/file.pi>
+#include <struct/list.pi>
+#include <struct/linlist.pi>
+#include <convert.pi>
+#include <console.pi>
+#define $deletelabels \
+  2->1:$linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2); \
+  $end;
+global $deletelabels deletelabels(1 pure,2);
+local pure service DeleteLabelsService(deletelabels (1 of 2) this) // {{{
+( this[2]>>lst;
+  lst[1]<<^pop;
+  lst[1]>>
+  {^nil:
+   ^cons:
+    lst[1]>>obj;
+    obj[1]<<^end;
+    dl=new deletelabels(2 of 2);
+    dl[1]<<lst;
+  }
+) // }}}
+|
+#define $deletevalues \
+  2->1:$linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
+  $end;
+global $deletevalues deletevalues(1 pure,2);
+local pure service DeleteValuesService(deletevalues (1 of 2) this) // {{{
+( this[2]>>lst;
+  lst[1]<<^pop;
+  lst[1]>>
+  {^nil:
+   ^cons:
+    lst[1]>>obj;
+    obj[1]<<^end;
+    dl=new deletevalues(2 of 2);
+    dl[1]<<lst;
+  }
+) // }}}
+|
+#define $printbox \
+  2->1: $list(String)(2 of 1 pure,2); \
+  2->1: $list(Int)(2 of 1 pure,2); \
+  2->1: $console(2 of 1,2); \
+  1->2: $console(2 of 1,2); \
+  $end;
+global $printbox printbox(1,2);
+local service PrintBoxService(printbox (1 of 2) this) // {{{
+( local PrintBox(1->2:$console(2 of 1,2);$end;(1 of 1,2) this,
+                 $console(2 of 1,2) c,
+                 $list(String)(2 of 1 pure,2) labels,
+                 $list(Int)(2 of 1 pure,2) values)
+  ( labels[1]<<^pop;
+    labels[1]>>
+    {^nil:
+      values[1]<<^end;
+      this[2]<<c;
+     ^cons:
+      labels[1]>>lbl>>ltail;
+      c[1]<<^str<<" ["<<^str<<lbl<<^str<<" ";
+      values[1]<<^pop;
+      values[1]>>
+      {^nil:
+        c[1]<<^str<<"error]";
+        ltail[1]<<^end;
+        this[2]<<c;
+       ^cons:
+        values[1]>>val>>vtail;
+        c[1]<<^int<<val<<^str<<"]";
+        PrintBox(this,c,ltail,vtail);
+      }
+    }
+  )
+  this[2]>>labels>>values>>c;
+  PrintBox(this,c,labels,values);
+) // }}}
+|
+#define $printboxes \
+  2->1: $linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2); \
+  2->1: $linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
+  $end;
+global $printboxes printboxes(1,2);
+local service PrintBoxesService(printboxes (1 of 2) this) // {{{
+( local PrintBoxes($console(2 of 1,2) c,
+                   $linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2) labels,
+                   $linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2) values,
+                   Int idx)
+  ( labels[1]<<^pop;
+    labels[1]>>
+    {^nil:
+      c[1]<<^end;
+      dv=new deletevalues(2 of 2);
+      dv[1]<<values;
+     ^cons:
+      labels[1]>>lbls;
+      values[1]<<^pop;
+      values[1]>>
+      {^nil:
+        c[1]<<^str<<"error"<<^nl<<^end;
+        dl=new deletelabels(2 of 2);
+        dl[1]<<labels;
+        lbls[1]<<^end;
+       ^cons:
+        values[1]>>vals;
+        c[1]<<^str<<"Box "<<^int<<idx<<^str<<":";
+        pb=new printbox(2 of 2);
+        pb[1]<<lbls<<vals<<c;
+        pb[1]>>c;
+        c[1]<<^nl;
+        PrintBoxes(c,labels,values,idx+1);
+      }
+    }
+  )
+  this[2]>>labels>>values;
+  c=new console(2 of 2);
+  PrintBoxes(c,labels,values,0);
+) // }}}
+|
+#define $strfind \
+  2->1: String; \
+  2->1: String; \
+  1->2: Int; \
+  $end;
+global $strfind strfind(1 pure,2);
+local pure service StrFindService(strfind (1 of 2) this) // {{{
+( this[2]>>data;
+  this[2]>>pat;
+  Int patlen=pat&^length;
+  if patlen<=0
+  then this[2]<<0;
+  else Int datalen=data&^length;
+       local pure StrFind(1->2:Int;$end;(1 of 1 pure,2) this, Int pos) // {{{
+       ( if datalen+1<=pos+patlen
+         then this[2]<<0-1;
+         else if (data%pos)/patlen=pat
+              then this[2]<<pos;
+              else StrFind(this,pos+1);
+       ) // }}}
+       StrFind(this,0);
+) // }}}
+|
+#define $parsecsvres \
+  1->2: $list(String)(2 of 1 pure,2); \
+  $end;
+#define $parsecsv \
+  2->1: String; \
+  $parsecsvres
+global $parsecsv parsecsv(1 pure,2);
+local pure service ParseCsvService(parsecsv (1 of 2) this) // {{{
+( this[2]>>csvstr;
+  Int len=csvstr&^length;
+  local pure ParseCsv($parsecsvres(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) res, Int pos) // {{{
+  ( fs=new strfind(2 of 2);
+    fs[1]<<csvstr%pos<<",";
+    fs[1]>>pos2;
+    if pos2+1<=0
+    then String elt=csvstr%pos;
+         res[1]<<^snoc<<elt;
+         this[2]<<res;
+    else if pos2<=0
+         then ParseCsv(this,res,pos+1);
+         else String elt=(csvstr%pos)/pos2;
+              res[1]<<^snoc<<elt;
+              ParseCsv(this,res,pos+pos2+1);
+  ) // }}}
+  res=new list(2 of 2);
+  res<<String;
+  ParseCsv(this,res,0);
+) // }}}
+|
+#define $hash \
+  2->1:String; \
+  1->2:Int; \
+  $end;
+global $hash hash(1 pure,2);
+local pure service HashService(hash (1 of 2) this) // {{{
+( this[2]>>str;
+  Int strlen=str&^length;
+  local pure Hash(1->2:Int;$end;(1 of 1 pure,2) this, Int pos, Int sum) // {{{
+  ( if strlen<=pos
+    then 
+         //HOST("cout << \"Final hash value is: \" << ((libpi::Int*)",sum,".get())->ToString() << endl;") pure;
+         this[2]<<sum;
+    else String ch=(str%pos)/1;
+         Int chord=0;
+         HOST("",chord,".reset(new libpi::Int((long)((libpi::String*)",ch,".get())->GetValue()[0]));") pure;
+         Int sum2=(sum+chord)*17;
+         Int sum3=sum2-((sum2/256)*256);
+         //HOST("cout << \"Hash is currently: \" << ((libpi::Int*)",sum3,".get())->ToString() << endl;") pure;
+         Hash(this,pos+1,sum3);
+  ) // }}}
+  Hash(this,0,0);
+) // }}}
+|
+#define $boxes \
+  1->2:$linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2); \
+  1->2:$linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
+  $end;
+global $boxes boxes(1 pure,2);
+local pure service BoxesService(boxes (1 of 2) this) // {{{
+( local pure InitBoxes($boxes(1 of 1 pure,2) this,
+                       $linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2) labels,
+                       $linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2) values,
+                       Int remaining)
+  ( if remaining<=0
+    then this[2]<<labels<<values;
+    else label=new list(2 of 2);
+         label<<String;
+         labels[1]<<^snoc<<label;
+         value=new list(2 of 2);
+         value<<Int;
+         values[1]<<^snoc<<value;
+         InitBoxes(this,labels,values,remaining-1);
+  )
+  labels=new linlist(2 of 2);
+  labels<<$list(String)(2 of 1 pure,2);
+  values=new linlist(2 of 2);
+  values<<$list(Int)(2 of 1 pure,2);
+  InitBoxes(this,labels,values,256);
+) // }}}
+|
+#define $removeboxlabelres \
+  1->2:$list(String)(2 of 1 pure,2); \
+  1->2:$list(Int)(2 of 1 pure,2); \
+  $end;
+#define $removeboxlabel \
+  2->1:String; \
+  2->1:$list(String)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  $removeboxlabelres
+global $removeboxlabel removeboxlabel(1 pure,2);
+local pure service RemoveBoxLabelService(removeboxlabel (1 of 2) this) // {{{
+( this[2]>>lbl>>labels>>values;
+  labels[1]<<^pop;
+  labels[1]>>
+  {^nil:
+    labels=new list(2 of 2);
+    labels<<String;
+    this[2]<<labels<<values;
+   ^cons:
+    labels[1]>>label>>ltail;
+    values[1]<<^pop;
+    values[1]>>
+    {^nil:
+      ltail[1]<<^cons<<label;
+      vtail=new list(2 of 2);
+      vtail<<Int;
+      this[2]<<ltail<<vtail;
+      HOST("cout << \"Error: error101\" << endl;") pure;
+     ^cons:
+      values[1]>>value>>vtail;
+      if lbl=label
+      then // remove
+           this[2]<<ltail<<vtail;
+      else rbl=new removeboxlabel(2 of 2);
+           rbl[1]<<lbl<<ltail<<vtail;
+           rbl[1]>>labels>>values;
+           labels[1]<<^cons<<label;
+           values[1]<<^cons<<value;
+           this[2]<<labels<<values;
+    }
+  }
+) // }}}
+|
+#define $removelabelres \
+  1->2:$linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2); \
+  1->2:$linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
+  $end;
+#define $removelabel \
+  2->1:Int; \
+  2->1:String; \
+  2->1:$linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2); \
+  2->1:$linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
+  $removelabelres
+global $removelabel removelabel(1 pure,2);
+local pure service RemoveLabelService(removelabel (1 of 2) this) // {{{
+( this[2]>>idx>>lbl>>labels>>values;
+  labels[1]<<^pop;
+  labels[1]>>
+  {^nil:
+    labels=new linlist(2 of 2);
+    labels<<$list(String)(2 of 1 pure,2);
+    HOST("cout << \"Error: error102\" << endl;") pure;
+    this[2]<<labels<<values;
+   ^cons:
+    labels[1]>>boxlabels;
+    values[1]<<^pop;
+    values[1]>>
+    {^nil:
+      labels[1]<<^cons<<boxlabels;
+      values=new linlist(2 of 2);
+      values<<$list(Int)(2 of 1 pure,2);
+      this[2]<<labels<<values;
+      HOST("cout << \"Error: error101\" << endl;") pure;
+     ^cons:
+      values[1]>>boxvalues;
+      if idx<=0
+      then rbl=new removeboxlabel(2 of 2);
+           rbl[1]<<lbl<<boxlabels<<boxvalues;
+           rbl[1]>>boxlabels>>boxvalues;
+           labels[1]<<^cons<<boxlabels;
+           values[1]<<^cons<<boxvalues;
+           this[2]<<labels<<values;
+      else rl=new removelabel(2 of 2);
+           rl[1]<<idx-1<<lbl<<labels<<values;
+           rl[1]>>labels>>values;
+           labels[1]<<^cons<<boxlabels;
+           values[1]<<^cons<<boxvalues;
+           this[2]<<labels<<values;
+    }
+  }
+) // }}}
+|
+#define $addboxlabelres \
+  1->2:$list(String)(2 of 1 pure,2); \
+  1->2:$list(Int)(2 of 1 pure,2); \
+  $end;
+#define $addboxlabel \
+  2->1:String; \
+  2->1:Int; \
+  2->1:$list(String)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  $addboxlabelres
+global $addboxlabel addboxlabel(1 pure,2);
+local pure service AddBoxLabelService(addboxlabel (1 of 2) this) // {{{
+( this[2]>>lbl>>val>>labels>>values;
+  labels[1]<<^pop;
+  labels[1]>>
+  {^nil:
+    labels=new list(2 of 2);
+    labels<<String;
+    labels[1]<<^cons<<lbl;
+    values[1]<<^cons<<val;
+    this[2]<<labels<<values;
+   ^cons:
+    labels[1]>>label>>ltail;
+    values[1]<<^pop;
+    values[1]>>
+    {^nil:
+      ltail[1]<<^cons<<label;
+      vtail=new list(2 of 2);
+      vtail<<Int;
+      this[2]<<ltail<<vtail;
+      HOST("cout << \"Error: error101\" << endl;") pure;
+     ^cons:
+      values[1]>>value>>vtail;
+      if lbl=label
+      then // update
+           ltail[1]<<^cons<<lbl;
+           vtail[1]<<^cons<<val;
+           this[2]<<ltail<<vtail;
+      else rbl=new addboxlabel(2 of 2);
+           rbl[1]<<lbl<<val<<ltail<<vtail;
+           rbl[1]>>labels>>values;
+           labels[1]<<^cons<<label;
+           values[1]<<^cons<<value;
+           this[2]<<labels<<values;
+    }
+  }
+) // }}}
+|
+#define $addlabelres \
+  1->2:$linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2); \
+  1->2:$linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
+  $end;
+#define $addlabel \
+  2->1:Int; \
+  2->1:String; \
+  2->1:Int; \
+  2->1:$linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2); \
+  2->1:$linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
+  $addlabelres
+global $addlabel addlabel(1 pure,2);
+local pure service AddLabelService(addlabel (1 of 2) this) // {{{
+( this[2]>>idx>>lbl>>val>>labels>>values;
+  labels[1]<<^pop;
+  labels[1]>>
+  {^nil:
+    labels=new linlist(2 of 2);
+    labels<<$list(String)(2 of 1 pure,2);
+    HOST("cout << \"Error: error102\" << endl;") pure;
+    this[2]<<labels<<values;
+   ^cons:
+    labels[1]>>boxlabels;
+    values[1]<<^pop;
+    values[1]>>
+    {^nil:
+      labels[1]<<^cons<<boxlabels;
+      values=new linlist(2 of 2);
+      values<<$list(Int)(2 of 1 pure,2);
+      this[2]<<labels<<values;
+      HOST("cout << \"Error: error101\" << endl;") pure;
+     ^cons:
+      values[1]>>boxvalues;
+      if idx<=0
+      then abl=new addboxlabel(2 of 2);
+           abl[1]<<lbl<<val<<boxlabels<<boxvalues;
+           abl[1]>>boxlabels>>boxvalues;
+           labels[1]<<^cons<<boxlabels;
+           values[1]<<^cons<<boxvalues;
+           this[2]<<labels<<values;
+      else rl=new addlabel(2 of 2);
+           rl[1]<<idx-1<<lbl<<val<<labels<<values;
+           rl[1]>>labels>>values;
+           labels[1]<<^cons<<boxlabels;
+           values[1]<<^cons<<boxvalues;
+           this[2]<<labels<<values;
+    }
+  }
+) // }}}
+|
+#define $updateboxes \
+  2->1:String; \
+  2->1:$linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2); \
+  2->1:$linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
+  1->2:$linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2); \
+  1->2:$linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
+  $end;
+global $updateboxes updateboxes(1 pure,2);
+local pure service UpdateBoxesService(updateboxes (1 of 2) this) // {{{
+( this[2]>>cmd>>labels>>values;
+  sf=new strfind(2 of 2);
+  sf[1]<<cmd<<"=";
+  sf[1]>>pos;
+  if pos+1<=0
+  then // cmd is remove
+       sf=new strfind(2 of 2);
+       sf[1]<<cmd<<"-";
+       sf[1]>>pos;
+       String lbl=cmd/pos;
+       h=new hash(2 of 2);
+       h[1]<<lbl;
+       h[1]>>lblhash;
+       rl=new removelabel(2 of 2);
+       rl[1]<<lblhash<<lbl<<labels<<values;
+       rl[1]>>labels>>values;
+       this[2]<<labels<<values;
+  else String lbl=cmd/pos;
+       h=new hash(2 of 2);
+       h[1]<<lbl;
+       h[1]>>lblhash;
+       String valstr=cmd%(pos+1);
+       Int val=0;
+       STRING2INT(valstr,val) pure;
+       al=new addlabel(2 of 2);
+       al[1]<<lblhash<<lbl<<val<<labels<<values;
+       al[1]>>labels>>values;
+       this[2]<<labels<<values;
+) // }}}
+|
+#define $calcboxpower \
+  2->1:Int; \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  1->2:Int; \
+  $end;
+global $calcboxpower calcboxpower(1 pure,2);
+local pure service CalcBoxPowerService(calcboxpower (1 of 2) this) // {{{
+( this[2]>>boxfactor;
+  local pure SumPowers(1->2:Int;$end;(1 of 1 pure,2) this, 
+                       $list(Int)(2 of 1 pure,2) values,
+                       Int lensid,Int sum)
+  ( values[1]<<^pop;
+    values[1]>>
+    {^nil:
+      this[2]<<sum;
+     ^cons:
+      values[1]>>val>>vtail;
+      SumPowers(this,vtail,lensid+1,sum+(boxfactor*lensid*val));
+    }
+  )
+  this[2]>>values;
+  SumPowers(this,values,1,0);
+) // }}}
+|
+#define $calcpower \
+  2->1:$linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2); \
+  1->2:Int; \
+  $end;
+global $calcpower calcpower(1 pure,2);
+local pure service CalcPowerService(calcpower (1 of 2) this) // {{{
+( local pure SumPowers(1->2:Int;$end;(1 of 1 pure,2) this, 
+                       $linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2) values,
+                       Int boxid,Int sum)
+  ( values[1]<<^pop;
+    values[1]>>
+    {^nil:
+      this[2]<<sum;
+     ^cons:
+      values[1]>>boxvalues;
+      cbp=new calcboxpower(2 of 2);
+      cbp[1]<<boxid+1<<boxvalues;
+      cbp[1]>>power;
+      SumPowers(this,values,boxid+1,sum+power);
+    }
+  )
+  this[2]>>values;
+  SumPowers(this,values,0,0);
+) // }}}
+|
+#define $focuspower \
+  2->1:$list(String)(2 of 1 pure,2); \
+  1->2:Int; \
+  $end;
+global $focuspower focuspower(1 pure,2);
+local pure service FocusPowerService(focuspower (1 of 2) this) // {{{
+( local pure FindLenses(1->2:Int;$end;(1 of 1 pure,2) this, // {{{
+                        $list(String)(2 of 1 pure,2) elts,
+                        $linlist($list(String)(2 of 1 pure,2))(2 of 1 pure,2) labels,
+                        $linlist($list(Int)(2 of 1 pure,2))(2 of 1 pure,2) values)
+  ( elts[1]<<^pop;
+    elts[1]>>
+    {^nil:
+      //pb=new printboxes(2 of 2);
+      //pb[1]<<labels<<values;
+      //this[2]<<0;
+      cp=new calcpower(2 of 2);
+      cp[1]<<values;
+      cp[1]>>power;
+      dl=new deletelabels(2 of 2);
+      dl[1]<<labels;
+      this[2]<<power;
+     ^cons:
+      elts[1]>>head>>tail;
+      ub=new updateboxes(2 of 2);
+      ub[1]<<head<<labels<<values;
+      ub[1]>>labels>>values;
+      FindLenses(this,tail,labels,values);
+    }
+  ) // }}}
+  this[2]>>elts;
+  bs=new boxes(2 of 2);
+  bs[1]>>labels>>values;
+  FindLenses(this,elts,labels,values);
+) // }}}
+|
+f=new file(2 of 2);
+f[1]<<^Read<<"input";
+f[1]>>
+{^OK:
+  local Read($infile(2 of 1,2) f) // {{{
+  ( f[1]<<^Line;
+    f[1]>>
+    {^Some:
+      f[1]>>line;
+      // Parse CSV row to string list
+      pcsv=new parsecsv(2 of 2);
+      pcsv[1]<<line;
+      pcsv[1]>>elts;
+      // Print string list (for debug)
+      //elts[1]<<^copy;
+      //elts[1]>>cpy;
+      //ps=new printstrings(2 of 2);
+      //ps[1]<<cpy;
+      // Calculate focuspower
+      fp=new focuspower(2 of 2);
+      fp[1]<<elts;
+      fp[1]>>sum;
+      // Print sum
+      c=new console(2 of 2);
+      c[1]<<^str<<"Sum of hashes is "<<^int<<sum<<^nl<<^end;
+      Read(f);
+     ^None:
+    }
+  ) // }}}
+  Read(f);
+ ^Error:
+  f[1]>>err;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+}
