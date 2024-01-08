@@ -3,39 +3,6 @@
 #include <console.pi>
 #include <convert.pi>
 
-#define $findnumbersres \
-  rec $res; \
-  1->2 \
-  {^number: \
-    1->2: Int; \
-    1->2: Int; \
-    $res; \
-   ^end: \
-    $end; \
-  }
-#define $findnumbers \
-  2->1: String; \
-  $findnumbersres
-global $findnumbers findnumbers(1 pure,2);
-local pure service FindNumbersService(findnumbers (1 of 2) s) // {{{
-( s[2]>>data;
-  Int len=data&^length;
-  local pure FindNumbers($findnumbersres(1 of 1 pure,2) s, Int start, Int pos) // {{{
-  ( if len<=pos
-    then if start+1<=pos
-         then s[2]<<^number<<start<<pos-start<<^end;
-         else s[2]<<^end;
-    else Int ch=data&pos;
-         if (ch<=48) and (57<=ch)
-         then FindNumbers(s,pos+1,start);
-         else if start+1<=pos
-              then s[2]<<^number<<start<<pos-start;
-                   FindNumbers(s,pos+1,pos+1);
-              else FindNumbers(s,pos+1,pos+1);
-  ) // }}}
-  FindNumbers(s,0,0);
-) // }}}
-|
 #define $findstarslistres \
   1->2: $list(Int)(2 of 1 pure,2); \
   1->2: $list(Int)(2 of 1 pure,2); \
@@ -102,7 +69,7 @@ local pure service FindNumberService(findnumber (1 of 2) this) // {{{
   local pure FindNumber($findnumberres(1 of 1 pure,2) this, Int start) // {{{
   ( local pure FindNumberEnd($findnumberres(1 of 1 pure,2) this, Int end) // {{{
     ( local pure ReturnNumber($findnumberres(1 of 1 pure,2) this) // {{{
-      ( String numberstr=(line%start)/(end-start);
+      ( String numberstr=(line%start)/(1+end-start);
         Int number=0;
         STRING2INT(numberstr,number) pure;
         this[2]<<^yes<<number;
@@ -137,17 +104,18 @@ local pure service FindNumberService(findnumber (1 of 2) this) // {{{
 global $nearnumbers nearnumbers(1 pure,2);
 local pure service NearNumbersService(nearnumbers (1 of 2) this) // {{{
 ( this[2]>>data>>x>>y;
-  local FindNumbersL3($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
+  local pure FindNumbersL3($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
   ( data[1]<<^get<<y+1;
     data[1]>>
     {^err:
       data[1]>>err;
+      data[1]<<^end;
       nn[1]<<^takeover<<this;
      ^val:
       data[1]>>line;
       data[1]<<^end;
       Int len=line&^length;
-      local FindNumbersL3R($list(Int)(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) nn) // {{{
+      local pure FindNumbersL3R($list(Int)(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) nn) // {{{
       ( if x<=len+2
         then fn=new findnumber(2 of 2);
              fn[1]<<line<<x+1;
@@ -160,7 +128,7 @@ local pure service NearNumbersService(nearnumbers (1 of 2) this) // {{{
              }
         else nn[1]<<^takeover<<this;
       ) // }}}
-      local FindNumbersL3L($list(Int)(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) nn) // {{{
+      local pure FindNumbersL3L($list(Int)(1 of 1 pure,2) this, $list(Int)(2 of 1 pure,2) nn) // {{{
       ( if 1<=x
         then fn=new findnumber(2 of 2);
              fn[1]<<line<<x-1;
@@ -170,7 +138,7 @@ local pure service NearNumbersService(nearnumbers (1 of 2) this) // {{{
               ^yes:
                fn[1]>>n;
                nn[1]<<^cons<<n;
-               FindNumbersL3R(this,data,nn);
+               FindNumbersL3R(this,nn);
              }
         else FindNumbersL3R(this,nn);
       ) // }}}
@@ -185,18 +153,19 @@ local pure service NearNumbersService(nearnumbers (1 of 2) this) // {{{
       }
     }
   ) // }}}
-  local FindNumbersL2($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
+  local pure FindNumbersL2($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
   ( data[1]<<^get<<y;
     data[1]>>
     {^err:
-      c=new console(2 of 2);
-      c[1]<<^str<<"Error in FindNumbersL2: get caused err"<<^nl<<^end;
+      //c=new console(2 of 2);
+      //c[1]<<^str<<"Error in FindNumbersL2: get caused err"<<^nl<<^end;
       data[1]>>err;
+      data[1]<<^end;
       nn[1]<<^takeover<<this;
      ^val:
       data[1]>>line;
       Int len=line&^length;
-      local FindNumbersL2R($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
+      local pure FindNumbersL2R($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
       ( if x<=len+2
         then fn=new findnumber(2 of 2);
              fn[1]<<line<<x+1;
@@ -210,7 +179,7 @@ local pure service NearNumbersService(nearnumbers (1 of 2) this) // {{{
              }
         else FindNumbersL3(this,data,nn);
       ) // }}}
-      local FindNumbersL2L($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
+      local pure FindNumbersL2L($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
       ( if 1<=x
         then fn=new findnumber(2 of 2);
              fn[1]<<line<<x-1;
@@ -233,14 +202,15 @@ local pure service NearNumbersService(nearnumbers (1 of 2) this) // {{{
   then data[1]<<^get<<y-1;
        data[1]>>
        {^err:
-         c=new console(2 of 2);
-         c[1]<<^str<<"Error in NearNumbersService: get caused err"<<^nl<<^end;
+         //c=new console(2 of 2);
+         //c[1]<<^str<<"Error in NearNumbersService: get caused err"<<^nl<<^end;
          data[1]>>err;
+         data[1]<<^end;
          nn[1]<<^takeover<<this;
         ^val:
          data[1]>>line;
          Int len=line&^length;
-         local FindNumbersL1R($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
+         local pure FindNumbersL1R($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
          ( if x<=len+2
            then fn=new findnumber(2 of 2);
                 fn[1]<<line<<x+1;
@@ -254,7 +224,7 @@ local pure service NearNumbersService(nearnumbers (1 of 2) this) // {{{
                 }
            else FindNumbersL2(this,data,nn);
          ) // }}}
-         local FindNumbersL1L($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
+         local pure FindNumbersL1L($list(Int)(1 of 1 pure,2) this, $list(String)(2 of 1 pure,2) data, $list(Int)(2 of 1 pure,2) nn) // {{{
          ( if 1<=x
            then fn=new findnumber(2 of 2);
                 fn[1]<<line<<x-1;
@@ -304,17 +274,21 @@ f[1]>>
       fs[1]<<ls2;
       fs[1]>>starxs>>starys;
       // Fix here
-      local PrintPositions($list(Int)(2 of 1 pure,2) xs, $list(Int)(2 of 1 pure,2) ys, $list(String)(2 of 1 pure,2) ls) // {{{
+      local PrintGearProducts($list(Int)(2 of 1 pure,2) xs, $list(Int)(2 of 1 pure,2) ys, $list(String)(2 of 1 pure,2) ls, Int sum) // {{{
       ( xs[1]<<^pop;
         xs[1]>>
         {^nil:
+          c=new console(2 of 2);
+          c[1]<<^str<<"Total sum of gearproducts: "<<^int<<sum<<^nl<<^end;
           ys[1]<<^end;
+          ls[1]<<^end;
          ^cons:
           xs[1]>>x>>xtail;
           ys[1]<<^pop;
           ys[1]>>
           {^nil:
             xtail[1]<<^end;
+            ls[1]<<^end;
            ^cons:
             ys[1]>>y>>ytail;
             c=new console(2 of 2);
@@ -323,39 +297,36 @@ f[1]>>
             ls[1]>>lscpy;
             nn=new nearnumbers(2 of 2);
             nn[1]<<lscpy<<x<<y;
-            ns[1]<<^pop
+            nn[1]<<^pop;
+            nn[1]>>
             {^nil:
-              PrintPositions(xtail,ytail,ls);
-             ^val:
-              nn[1]>>n1;
-              nn[1]<<^pop;
-              ls[1]>>
+              PrintGearProducts(xtail,ytail,ls,sum);
+             ^cons:
+              nn[1]>>n1>>nn1;
+              nn1[1]<<^pop;
+              nn1[1]>>
               {^nil:
-                PrintPositions(xtail,ytail,ls);
-               ^val:
-                nn[1]>>n2;
-                nn[1]<<^popM
-                nn[1]>>
+                PrintGearProducts(xtail,ytail,ls,sum);
+               ^cons:
+                nn1[1]>>n2>>nn2;
+                nn2[1]<<^pop;
+                nn2[1]>>
                 {^nil:
                   // Exactly 2 near numbers
                   c=new console(2 of 2);
-                  c[1]<<^str<<"Exactly two near numbers: "<<^int<<n1<<^str<<" and "<<^int<<n2<<^nl<<^end;
-                 ^val:
-                  nn[1]>>n3;
-                  nn[1]<<^end;
-                  PrintPositions(xtail,ytail,ls);
+                  c[1]<<^str<<"GearProduct: "<<^int<<n1<<^str<<"*"<<^int<<n2<<^str<<"="<<^int<<n1*n2<<^nl<<^end;
+                  PrintGearProducts(xtail,ytail,ls,sum+(n1*n2));
+                 ^cons:
+                  nn2[1]>>n3>>nn3;
+                  nn3[1]<<^end;
+                  PrintGearProducts(xtail,ytail,ls,sum);
                 }
               }
             }
           }
         }
       ) // }}} 
-      PrintPositions(starxs,starys,ls);
-      //ap=new addproducts(2 of 2);
-      //ap[1]<<stars;
-      //ap[1]>>sum;
-      //c=new console(2 of 2);
-      //c[1]<<^str<<"Sum of products is "<<^int<<sum<<^nl<<^end;
+      PrintGearProducts(starxs,starys,ls,0);
     }
   ) // }}}
   ls=new list(2 of 2);
