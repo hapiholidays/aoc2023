@@ -106,12 +106,23 @@ local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
                // PRINT
                c=new console(2 of 2);
                c[1]<<^int<<x<<^str<<"*t"<<^int<<j<<^str<<"+"
-                   <<^int<<dx<<^str<<"*t"<<^int<<i<<^str<<"t"<<^int<<j<<^str<<"+"
-                   <<^str<<"-1*t"<<^int<<j<<^str<<"x0-"
-                   <<^int<<x2<<^str<<"*t"<<^int<<i<<^str<<"-"
-                   <<^int<<dx2<<^str<<"t"<<^int<<i<<^str<<"t"<<^int<<j<<^str<<"+"
+                   <<^str<<"("<<^int<<dx-dx2<<^str<<")*t"<<^int<<i<<^str<<"t"<<^int<<j<<^str<<"-"
+                   <<^str<<"("<<^int<<x2<<^str<<")*t"<<^int<<i<<^str<<"-"
+                   <<^str<<"t"<<^int<<j<<^str<<"x0"<<^str<<"+"
                    <<^str<<"t"<<^int<<i<<^str<<"x0"
-                   <<^nl<<^end;
+                   <<^str<<"=0"<<^nl<<^end;
+               //c[1]<<^int<<y<<^str<<"*t"<<^int<<j<<^str<<"+"
+               //    <<^str<<"("<<^int<<dy-dy2<<^str<<")*t"<<^int<<i<<^str<<"t"<<^int<<j<<^str<<"-"
+               //    <<^str<<"("<<^int<<y2<<^str<<")*t"<<^int<<i<<^str<<"-"
+               //    <<^str<<"t"<<^int<<j<<^str<<"y0"<<^str<<"+"
+               //    <<^str<<"t"<<^int<<i<<^str<<"y0"
+               //    <<^str<<"=0"<<^nl;
+               //c[1]<<^int<<z<<^str<<"*t"<<^int<<j<<^str<<"+"
+               //    <<^str<<"("<<^int<<dz-dz2<<^str<<")*t"<<^int<<i<<^str<<"t"<<^int<<j<<^str<<"-"
+               //    <<^str<<"("<<^int<<z2<<^str<<")*t"<<^int<<i<<^str<<"-"
+               //    <<^str<<"t"<<^int<<j<<^str<<"z0"<<^str<<"+"
+               //    <<^str<<"t"<<^int<<i<<^str<<"z0"
+               //    <<^str<<"=0"<<^nl<<^end;
                // CALL RECURSICELY
                PrintEquations2(x,y,z,dx,dy,dz,rxs,rys,rzs,rdxs,rdys,rdzs,i+1);
              }
