@@ -52,7 +52,7 @@ local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
      dys[1]<<^end;
      dzs[1]<<^end;
     ^cons:
-     xs[1]>>x>>rxs;
+     xs[1]>>x2>>rxs;
      ys[1]<<^pop;
      ys[1]>>
      {^nil:
@@ -62,7 +62,7 @@ local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
        dys[1]<<^end;
        dzs[1]<<^end;
       ^cons:
-       ys[1]>>y>>rys;
+       ys[1]>>y2>>rys;
        zs[1]<<^pop;
        zs[1]>>
        {^nil:
@@ -72,7 +72,7 @@ local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
          dys[1]<<^end;
          dzs[1]<<^end;
         ^cons:
-         zs[1]>>z>>rzs;
+         zs[1]>>z2>>rzs;
          dxs[1]<<^pop;
          dxs[1]>>
          {^nil:
@@ -82,7 +82,7 @@ local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
            dys[1]<<^end;
            dzs[1]<<^end;
           ^cons:
-           dxs[1]>>dx>>rdxs;
+           dxs[1]>>dx2>>rdxs;
            dys[1]<<^pop;
            dys[1]>>
            {^nil:
@@ -92,7 +92,7 @@ local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
              rdxs[1]<<^end;
              dzs[1]<<^end;
             ^cons:
-             dys[1]>>dy>>rdys;
+             dys[1]>>dy2>>rdys;
              dzs[1]<<^pop;
              dzs[1]>>
              {^nil:
@@ -102,28 +102,24 @@ local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
                rdxs[1]<<^end;
                rdys[1]<<^end;
               ^cons:
-               dzs[1]>>dz>>rdzs;
+               dzs[1]>>dz2>>rdzs;
+               // PRINT
                c=new console(2 of 2);
                c[1]<<^int<<x<<^str<<"*t"<<^int<<j<<^str<<"+"
-                   <<^int<<dx<<^str<<"*t"<<^int<<i<<^str<<"t"<<^int<<j<<"+"
+                   <<^int<<dx<<^str<<"*t"<<^int<<i<<^str<<"t"<<^int<<j<<^str<<"+"
                    <<^str<<"-1*t"<<^int<<j<<^str<<"x0-"
-                   <<^str<<"t"<<^int<<i<<^str<<"x0-"
-                   <<^str<<"t"<<^int<<i<<^str<<"t"<<
-               PrintEquations(x,y,z,dx,dy,dz,rxs,rys,rzs,rdxs,rdys,rdzs,i+1);
+                   <<^int<<x2<<^str<<"*t"<<^int<<i<<^str<<"-"
+                   <<^int<<dx2<<^str<<"t"<<^int<<i<<^str<<"t"<<^int<<j<<^str<<"+"
+                   <<^str<<"t"<<^int<<i<<^str<<"x0"
+                   <<^nl<<^end;
+               // CALL RECURSICELY
+               PrintEquations2(x,y,z,dx,dy,dz,rxs,rys,rzs,rdxs,rdys,rdzs,i+1);
              }
            }
          }
        }
      }
    }
-   // PRINT
-   // CALL RECURSICELY
-   rxs[1]<<^end;
-   rys[1]<<^end;
-   rzs[1]<<^end;
-   rdxs[1]<<^end;
-   rdys[1]<<^end;
-   rdzs[1]<<^end;
  ) // }}}
  xs[1]<<^pop;
  xs[1]>>
