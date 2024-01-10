@@ -1,0 +1,316 @@
+#include <sys/file.pi>
+#include <struct/list.pi>
+#include <console.pi>
+#include <convert.pi>
+
+#define $strfind \
+  2->1: String; \
+  2->1: String; \
+  1->2: Int; \
+  $end;
+global $strfind strfind(1 pure,2);
+local pure service StrFindService(strfind (1 of 2) this) // {{{
+( this[2]>>data;
+  this[2]>>pat;
+  Int patlen=pat&^length;
+  if patlen<=0
+  then this[2]<<0;
+  else Int datalen=data&^length;
+       local pure StrFind(1->2:Int;$end;(1 of 1 pure,2) this, Int pos) // {{{
+       ( if datalen+1<=pos+patlen
+         then this[2]<<0-1;
+         else if (data%pos)/patlen=pat
+              then this[2]<<pos;
+              else StrFind(this,pos+1);
+       ) // }}}
+       StrFind(this,0);
+) // }}}
+|
+local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
+                     $list(Int)(2 of 1 pure,2) ys,
+                     $list(Int)(2 of 1 pure,2) zs,
+                     $list(Int)(2 of 1 pure,2) dxs,
+                     $list(Int)(2 of 1 pure,2) dys,
+                     $list(Int)(2 of 1 pure,2) dzs,
+                     Int i)
+( local PrintEquations2(Int x, Int y, Int z, // {{{
+                        Int dx, Int dy, Int dz,
+                        $list(Int)(2 of 1 pure,2) xs,
+                        $list(Int)(2 of 1 pure,2) ys,
+                        $list(Int)(2 of 1 pure,2) zs,
+                        $list(Int)(2 of 1 pure,2) dxs,
+                        $list(Int)(2 of 1 pure,2) dys,
+                        $list(Int)(2 of 1 pure,2) dzs,
+                        Int j)
+ ( // POP
+   xs[1]<<^pop;
+   xs[1]>>
+   {^nil:
+     ys[1]<<^end;
+     zs[1]<<^end;
+     dxs[1]<<^end;
+     dys[1]<<^end;
+     dzs[1]<<^end;
+    ^cons:
+     xs[1]>>x>>rxs;
+     ys[1]<<^pop;
+     ys[1]>>
+     {^nil:
+       rxs[1]<<^end;
+       zs[1]<<^end;
+       dxs[1]<<^end;
+       dys[1]<<^end;
+       dzs[1]<<^end;
+      ^cons:
+       ys[1]>>y>>rys;
+       zs[1]<<^pop;
+       zs[1]>>
+       {^nil:
+         rxs[1]<<^end;
+         rys[1]<<^end;
+         dxs[1]<<^end;
+         dys[1]<<^end;
+         dzs[1]<<^end;
+        ^cons:
+         zs[1]>>z>>rzs;
+         dxs[1]<<^pop;
+         dxs[1]>>
+         {^nil:
+           rxs[1]<<^end;
+           rys[1]<<^end;
+           rzs[1]<<^end;
+           dys[1]<<^end;
+           dzs[1]<<^end;
+          ^cons:
+           dxs[1]>>dx>>rdxs;
+           dys[1]<<^pop;
+           dys[1]>>
+           {^nil:
+             rxs[1]<<^end;
+             rys[1]<<^end;
+             rzs[1]<<^end;
+             rdxs[1]<<^end;
+             dzs[1]<<^end;
+            ^cons:
+             dys[1]>>dy>>rdys;
+             dzs[1]<<^pop;
+             dzs[1]>>
+             {^nil:
+               rxs[1]<<^end;
+               rys[1]<<^end;
+               rzs[1]<<^end;
+               rdxs[1]<<^end;
+               rdys[1]<<^end;
+              ^cons:
+               dzs[1]>>dz>>rdzs;
+               c=new console(2 of 2);
+               c[1]<<^int<<x<<^str<<"*t"<<^int<<j<<^str<<"+"
+                   <<^int<<dx<<^str<<"*t"<<^int<<i<<^str<<"t"<<^int<<j<<"+"
+                   <<^str<<"-1*t"<<^int<<j<<^str<<"x0-"
+                   <<^str<<"t"<<^int<<i<<^str<<"x0-"
+                   <<^str<<"t"<<^int<<i<<^str<<"t"<<
+               PrintEquations(x,y,z,dx,dy,dz,rxs,rys,rzs,rdxs,rdys,rdzs,i+1);
+             }
+           }
+         }
+       }
+     }
+   }
+   // PRINT
+   // CALL RECURSICELY
+   rxs[1]<<^end;
+   rys[1]<<^end;
+   rzs[1]<<^end;
+   rdxs[1]<<^end;
+   rdys[1]<<^end;
+   rdzs[1]<<^end;
+ ) // }}}
+ xs[1]<<^pop;
+ xs[1]>>
+ {^nil:
+   ys[1]<<^end;
+   zs[1]<<^end;
+   dxs[1]<<^end;
+   dys[1]<<^end;
+   dzs[1]<<^end;
+  ^cons:
+   xs[1]>>x>>rxs;
+   ys[1]<<^pop;
+   ys[1]>>
+   {^nil:
+     rxs[1]<<^end;
+     zs[1]<<^end;
+     dxs[1]<<^end;
+     dys[1]<<^end;
+     dzs[1]<<^end;
+    ^cons:
+     ys[1]>>y>>rys;
+     zs[1]<<^pop;
+     zs[1]>>
+     {^nil:
+       rxs[1]<<^end;
+       rys[1]<<^end;
+       dxs[1]<<^end;
+       dys[1]<<^end;
+       dzs[1]<<^end;
+      ^cons:
+       zs[1]>>z>>rzs;
+       dxs[1]<<^pop;
+       dxs[1]>>
+       {^nil:
+         rxs[1]<<^end;
+         rys[1]<<^end;
+         rzs[1]<<^end;
+         dys[1]<<^end;
+         dzs[1]<<^end;
+        ^cons:
+         dxs[1]>>dx>>rdxs;
+         dys[1]<<^pop;
+         dys[1]>>
+         {^nil:
+           rxs[1]<<^end;
+           rys[1]<<^end;
+           rzs[1]<<^end;
+           rdxs[1]<<^end;
+           dzs[1]<<^end;
+          ^cons:
+           dys[1]>>dy>>rdys;
+           dzs[1]<<^pop;
+           dzs[1]>>
+           {^nil:
+             rxs[1]<<^end;
+             rys[1]<<^end;
+             rzs[1]<<^end;
+             rdxs[1]<<^end;
+             rdys[1]<<^end;
+            ^cons:
+             dzs[1]>>dz>>rdzs;
+             rxs[1]<<^copy;
+             rxs[1]>>rxscpy;
+             rys[1]<<^copy;
+             rys[1]>>ryscpy;
+             rzs[1]<<^copy;
+             rzs[1]>>rzscpy;
+             rdxs[1]<<^copy;
+             rdxs[1]>>rdxscpy;
+             rdys[1]<<^copy;
+             rdys[1]>>rdyscpy;
+             rdzs[1]<<^copy;
+             rdzs[1]>>rdzscpy;
+             ( PrintEquations(rxs,rys,rzs,rdxs,rdys,rdzs,i+1);
+             | PrintEquations2(x,y,z,dx,dy,dz,rxscpy,ryscpy,rzscpy,rdxscpy,rdyscpy,rdzscpy,i+1);
+             )
+           }
+         }
+       }
+     }
+   }
+ }
+) // }}}
+f=new file(2 of 2);
+f[1]<<^Read<<"input";
+f[1]>>
+{^OK:
+  local Read($infile(2 of 1,2) f, // {{{
+             $list(Int)(2 of 1 pure,2) xs,
+             $list(Int)(2 of 1 pure,2) ys,
+             $list(Int)(2 of 1 pure,2) zs,
+             $list(Int)(2 of 1 pure,2) dxs,
+             $list(Int)(2 of 1 pure,2) dys,
+             $list(Int)(2 of 1 pure,2) dzs)
+  ( f[1]<<^Line;
+    f[1]>>
+    {^Some:
+      f[1]>>line;
+      xs[1]<<^length;
+      xs[1]>>points;
+      if (5<=points) or (line&^length<=0)
+      then Read(f,xs,ys,zs,dxs,dys,dzs);
+      else // First value
+           fs1=new strfind(2 of 2);
+           fs1[1]<<line<<",";
+           fs1[1]>>pos1;
+           String val1=line/pos1;
+           Int fval1=0;
+           STRING2INT(val1,fval1);
+           String line2=line%(pos1+2);
+     
+           // Second value
+           fs2=new strfind(2 of 2);
+           fs2[1]<<line2<<",";
+           fs2[1]>>pos2;
+           String val2=line2/pos2;
+           Int fval2=0;
+           STRING2INT(val2,fval2);
+           String line3=line2%(pos2+2);
+           
+           // Third value
+           fs3=new strfind(2 of 2);
+           fs3[1]<<line3<<"@";
+           fs3[1]>>pos3;
+           String val3=line3/pos3;
+           Int fval3=0;
+           STRING2INT(val3,fval3);
+           String line4=line3%(pos3+2);
+           
+           // Fourth value
+           fs4=new strfind(2 of 2);
+           fs4[1]<<line4<<",";
+           fs4[1]>>pos4;
+           String val4=line4/pos4;
+           Int fval4=0;
+           STRING2INT(val4,fval4);
+           String line5=line4%(pos4+2);
+           
+           // Fifth value
+           fs5=new strfind(2 of 2);
+           fs5[1]<<line5<<",";
+           fs5[1]>>pos5;
+           String val5=line5/pos5;
+           Int fval5=0;
+           STRING2INT(val5,fval5);
+           String line6=line5%(pos5+2);
+
+           // Sixth value
+           Int fval6=0;
+           STRING2INT(line6,fval6);
+
+           // Test val 2
+           c=new console(2 of 2);
+           c[1]<<^str<<val1<<^str<<"->"<<^int<<fval1<<^nl
+               <<^str<<val2<<^str<<"->"<<^int<<fval2<<^nl
+               <<^str<<val3<<^str<<"->"<<^int<<fval3<<^nl
+               <<^str<<val4<<^str<<"->"<<^int<<fval4<<^nl
+               <<^str<<val5<<^str<<"->"<<^int<<fval5<<^nl
+               <<^str<<line6<<^str<<"->"<<^int<<fval6<<^nl
+               <<^end;
+
+           xs[1]<<^snoc<<fval1;
+           ys[1]<<^snoc<<fval2;
+           zs[1]<<^snoc<<fval3;
+           dxs[1]<<^snoc<<fval4;
+           dys[1]<<^snoc<<fval5;
+           dzs[1]<<^snoc<<fval6;
+           Read(f,xs,ys,zs,dxs,dys,dzs);
+     ^None:
+      PrintEquations(xs,ys,zs,dxs,dys,dzs,1);
+    }
+  ) // }}}
+  xs=new list(2 of 2);
+  xs<<Int;
+  ys=new list(2 of 2);
+  ys<<Int;
+  zs=new list(2 of 2);
+  zs<<Int;
+  dxs=new list(2 of 2);
+  dxs<<Int;
+  dys=new list(2 of 2);
+  dys<<Int;
+  dzs=new list(2 of 2);
+  dzs<<Int;
+  Read(f,xs,ys,zs,dxs,dys,dzs);
+ ^Error:
+  f[1]>>err;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+}
