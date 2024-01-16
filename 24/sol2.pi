@@ -3,6 +3,27 @@
 #include <console.pi>
 #include <convert.pi>
 
+#define $printflts \
+  2->1: $list(Float)(2 of 1 pure,2); \
+  $end;
+global $printflts printflts(1,2);
+local service PrintIntsService(printints (1 of 2) this) // {{{
+( this[2]>>flts;
+  c=new console(2 of 2);c[1]<<^str<<"[";
+  local PrinFlts($list(Int)(2 of 1 pure,2) flts, Bool first, $console(2 of 1,2) c) // {{{
+  ( ints[1]<<^pop;
+    ints[1]>>
+    {^nil:
+      c[1]<<^str<<"]"<<^nl<<^end;
+     ^cons:
+      ints[1]>>head>>tail;
+      c[1]<<^str<<if not first then ", " else ""<<^flt<<head;
+      PrintFlts(tail,false,c);
+    }
+  ) // }}}
+  PrintInts(ints,true,c);
+) // }}}
+|
 #define $strfind \
   2->1: String; \
   2->1: String; \
@@ -26,13 +47,125 @@ local pure service StrFindService(strfind (1 of 2) this) // {{{
        StrFind(this,0);
 ) // }}}
 |
-local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
-                     $list(Int)(2 of 1 pure,2) ys,
-                     $list(Int)(2 of 1 pure,2) zs,
-                     $list(Int)(2 of 1 pure,2) dxs,
-                     $list(Int)(2 of 1 pure,2) dys,
-                     $list(Int)(2 of 1 pure,2) dzs,
-                     Int i)
+#define $printnres \
+  1->2:$console(2 of 1,2); \
+  $end;
+#define $printn \
+  2->1:$console(2 of 1,2); \
+  2->1:Int; \
+  $printnres
+global $printn printn(1,2);
+local service PrintNService(printn (1 of 2) this) // {{{
+( local PrintN($printnres(1 of 1,2) this, $console(2 of 1,2) c, Int n) // {{{
+  ( if n<=0
+    then this[2]<<c;
+    else c[1]<<^str<<"0,";
+         PrintN(this,c,n-1);
+  ) // }}}
+  this[2]>>c>>n;
+  PrintN(this,c,n);
+) // }}}
+|
+#define $mincrossres \
+  1->2:$list(Float)(2 of 1 pure,2); \
+  $end;
+#define $mincross \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  2->1:$list(Int)(2 of 1 pure,2); \
+  $mincrossres
+global $mincross mincross(1 pure,2);
+local pure service MinCrossService(mincross (1 of 2) this) // {{{
+( this[2]>>xs>>ys>>zs>>dxs>>dys>>dzs;
+  ts=new list(2 of 2);
+  ts<<Float;
+  local pure MinCross($mincrossres(1 of 1 pure,2) this, // {{{
+                      $list(Int)(2 of 1 pure,2) xs,
+                      $list(Int)(2 of 1 pure,2) ys,
+                      $list(Int)(2 of 1 pure,2) zs,
+                      $list(Int)(2 of 1 pure,2) dxs,
+                      $list(Int)(2 of 1 pure,2) dys,
+                      $list(Int)(2 of 1 pure,2) dzs,
+                      $list(Float)(2 of 1 pure,2) ts,
+                      Int pos)
+  ( xs[1]<<^get<<pos;
+    xs[1]>>
+    {^err:
+      xs[1]>>err;
+      xs[1]<<^end;
+      ys[1]<<^end;
+      zs[1]<<^end;
+      dxs[1]<<^end;
+      dys[1]<<^end;
+      dzs[1]<<^end;
+      pf=new printflts(2 of 2);
+      pf[1]<<ts;
+     ^val:
+      xs[1]>>x1;
+      xs[1]<<^get<<pos+1;
+      xs[1]>>
+      {^err:
+        xs[1]>>err;
+        xs[1]<<^end;
+        ys[1]<<^end;
+        zs[1]<<^end;
+        dxs[1]<<^end;
+        dys[1]<<^end;
+        dzs[1]<<^end;
+        pf=new printflts(2 of 2);
+        pf[1]<<ts;
+       ^val:
+        xs[1]>>x2;
+        xs[1]<<^get<<^pos+2;
+        xs[1]>>
+        {^err:
+          xs[1]>>err;
+          xs[1]<<^end;
+          ys[1]<<^end;
+          zs[1]<<^end;
+          dxs[1]<<^end;
+          dys[1]<<^end;
+          dzs[1]<<^end;
+          pf=new printflts(2 of 2);
+          pf[1]<<ts;
+         ^val:
+          xs[1]>>x3;
+          ts[1]<<^get<<pos;
+          ts[1]>>
+          {^err:
+            ts[1]>>err;
+            xs[1]<<^end;
+            ys[1]<<^end;
+            zs[1]<<^end;
+            dxs[1]<<^end;
+            dys[1]<<^end;
+            dzs[1]<<^end;
+            pf=new printflts(2 of 2);
+            pf[1]<<ts;
+           ^val:
+            ts[1]>>t1;
+            ts[1]<<^get<<pos+1;
+
+
+          
+    xs[1]>>
+    {^nil:
+      
+  ) // }}}
+  MinCross(this,xs,ys,zs,dxs,dys,dzs,ts,1);
+) // }}}
+|
+local MinimizeCross($list(Int)(2 of 1 pure,2) xs, // {{{
+                    $list(Int)(2 of 1 pure,2) ys,
+                    $list(Int)(2 of 1 pure,2) zs,
+                    $list(Int)(2 of 1 pure,2) dxs,
+                    $list(Int)(2 of 1 pure,2) dys,
+                    $list(Int)(2 of 1 pure,2) dzs,
+                    $list(Int)(2 of 1 pure,2) tzs,
+                    Int eqns)
 ( local PrintEquations2(Int x, Int y, Int z, // {{{
                         Int dx, Int dy, Int dz,
                         $list(Int)(2 of 1 pure,2) xs,
@@ -103,28 +236,98 @@ local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
                rdys[1]<<^end;
               ^cons:
                dzs[1]>>dz2>>rdzs;
-               // PRINT
+               // PRINT matrix row
+               // columns are t1,t2,...,tn,t1dx0,t2dx0,...,tndx0,t1dy0,t2dy0,...,tndy0,t1dz0,t2dz0,...,tndz0,const
+               // Since (x0,y0,z0)+ti(dx0,dy0,dz0)=(xi,yi,zi)+ti(dxi,dyi,dzi) and same for j
+               // we have (x0,y0,z0)=(xi,yi,zi)+ti(dxi-dx0,dyi-dy0,dzi-dz0) and same for j, and thus
+               // ti*dxi-tj*dxj-ti*dx0+tj*dx0=xj-xi
                c=new console(2 of 2);
-               c[1]<<^int<<x<<^str<<"*t"<<^int<<j<<^str<<"+"
-                   <<^str<<"("<<^int<<dx-dx2<<^str<<")*t"<<^int<<i<<^str<<"t"<<^int<<j<<^str<<"-"
-                   <<^str<<"("<<^int<<x2<<^str<<")*t"<<^int<<i<<^str<<"-"
-                   <<^str<<"t"<<^int<<j<<^str<<"x0"<<^str<<"+"
-                   <<^str<<"t"<<^int<<i<<^str<<"x0"
-                   <<^str<<"=0"<<^nl<<^end;
-               //c[1]<<^int<<y<<^str<<"*t"<<^int<<j<<^str<<"+"
-               //    <<^str<<"("<<^int<<dy-dy2<<^str<<")*t"<<^int<<i<<^str<<"t"<<^int<<j<<^str<<"-"
-               //    <<^str<<"("<<^int<<y2<<^str<<")*t"<<^int<<i<<^str<<"-"
-               //    <<^str<<"t"<<^int<<j<<^str<<"y0"<<^str<<"+"
-               //    <<^str<<"t"<<^int<<i<<^str<<"y0"
-               //    <<^str<<"=0"<<^nl;
-               //c[1]<<^int<<z<<^str<<"*t"<<^int<<j<<^str<<"+"
-               //    <<^str<<"("<<^int<<dz-dz2<<^str<<")*t"<<^int<<i<<^str<<"t"<<^int<<j<<^str<<"-"
-               //    <<^str<<"("<<^int<<z2<<^str<<")*t"<<^int<<i<<^str<<"-"
-               //    <<^str<<"t"<<^int<<j<<^str<<"z0"<<^str<<"+"
-               //    <<^str<<"t"<<^int<<i<<^str<<"z0"
-               //    <<^str<<"=0"<<^nl<<^end;
+               pn=new printn(2 of 2);
+               pn[1]<<c<<i-1;
+               pn[1]>>c;
+               c[1]<<^int<<dx<<^str<<",";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<j-i-1;
+               pn[1]>>c;
+               c[1]<<^int<<0-dx2<<^str<<",";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<eqns-j;
+               pn[1]>>c;
+               pn=new printn(2 of 2);
+               pn[1]<<c<<i-1;
+               pn[1]>>c;
+               c[1]<<^str<<"-1,";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<j-i-1;
+               pn[1]>>c;
+               c[1]<<^str<<"1,";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<eqns-j;
+               pn[1]>>c;
+               pn=new printn(2 of 2);
+               pn[1]<<c<<2*eqns;
+               pn[1]>>c;
+               c[1]<<^str<<""<<^int<<x2-x<<^str<<";"<<^nl;
+
+               pn=new printn(2 of 2);
+               pn[1]<<c<<i-1;
+               pn[1]>>c;
+               c[1]<<^int<<dy<<^str<<",";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<j-i-1;
+               pn[1]>>c;
+               c[1]<<^int<<0-dy2<<^str<<",";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<eqns-j;
+               pn[1]>>c;
+               pn=new printn(2 of 2);
+               pn[1]<<c<<eqns;
+               pn[1]>>c;
+               pn=new printn(2 of 2);
+               pn[1]<<c<<i-1;
+               pn[1]>>c;
+               c[1]<<^str<<"-1,";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<j-i-1;
+               pn[1]>>c;
+               c[1]<<^str<<"1,";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<eqns-j;
+               pn[1]>>c;
+               pn=new printn(2 of 2);
+               pn[1]<<c<<eqns;
+               pn[1]>>c;
+               c[1]<<^str<<"int64("<<^int<<y2-y<<^str<<");"<<^nl;
+
+               pn=new printn(2 of 2);
+               pn[1]<<c<<i-1;
+               pn[1]>>c;
+               c[1]<<^int<<dz<<^str<<",";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<j-i-1;
+               pn[1]>>c;
+               c[1]<<^int<<0-dz2<<^str<<",";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<eqns-j;
+               pn[1]>>c;
+               pn=new printn(2 of 2);
+               pn[1]<<c<<2*eqns;
+               pn[1]>>c;
+               pn=new printn(2 of 2);
+               pn[1]<<c<<i-1;
+               pn[1]>>c;
+               c[1]<<^str<<"-1,";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<j-i-1;
+               pn[1]>>c;
+               c[1]<<^str<<"1,";
+               pn=new printn(2 of 2);
+               pn[1]<<c<<eqns-j;
+               pn[1]>>c;
+               c[1]<<^str<<"int64("<<^int<<z2-z<<^str<<");"<<^nl<<^end;
+
                // CALL RECURSICELY
-               PrintEquations2(x,y,z,dx,dy,dz,rxs,rys,rzs,rdxs,rdys,rdzs,i+1);
+               PrintEquations2(x,y,z,dx,dy,dz,rxs,rys,rzs,rdxs,rdys,rdzs,j+1);
              }
            }
          }
@@ -204,7 +407,7 @@ local PrintEquations($list(Int)(2 of 1 pure,2) xs, // {{{
              rdys[1]>>rdyscpy;
              rdzs[1]<<^copy;
              rdzs[1]>>rdzscpy;
-             ( PrintEquations(rxs,rys,rzs,rdxs,rdys,rdzs,i+1);
+             ( PrintEquations(rxs,rys,rzs,rdxs,rdys,rdzs,i+1,eqns);
              | PrintEquations2(x,y,z,dx,dy,dz,rxscpy,ryscpy,rzscpy,rdxscpy,rdyscpy,rdzscpy,i+1);
              )
            }
@@ -231,7 +434,7 @@ f[1]>>
       f[1]>>line;
       xs[1]<<^length;
       xs[1]>>points;
-      if (5<=points) or (line&^length<=0)
+      if (20<=points) or (line&^length<=0)
       then Read(f,xs,ys,zs,dxs,dys,dzs);
       else // First value
            fs1=new strfind(2 of 2);
@@ -283,14 +486,14 @@ f[1]>>
            STRING2INT(line6,fval6);
 
            // Test val 2
-           c=new console(2 of 2);
-           c[1]<<^str<<val1<<^str<<"->"<<^int<<fval1<<^nl
-               <<^str<<val2<<^str<<"->"<<^int<<fval2<<^nl
-               <<^str<<val3<<^str<<"->"<<^int<<fval3<<^nl
-               <<^str<<val4<<^str<<"->"<<^int<<fval4<<^nl
-               <<^str<<val5<<^str<<"->"<<^int<<fval5<<^nl
-               <<^str<<line6<<^str<<"->"<<^int<<fval6<<^nl
-               <<^end;
+           //c=new console(2 of 2);
+           //c[1]<<^str<<val1<<^str<<"->"<<^int<<fval1<<^nl
+           //    <<^str<<val2<<^str<<"->"<<^int<<fval2<<^nl
+           //    <<^str<<val3<<^str<<"->"<<^int<<fval3<<^nl
+           //    <<^str<<val4<<^str<<"->"<<^int<<fval4<<^nl
+           //    <<^str<<val5<<^str<<"->"<<^int<<fval5<<^nl
+           //    <<^str<<line6<<^str<<"->"<<^int<<fval6<<^nl
+           //    <<^end;
 
            xs[1]<<^snoc<<fval1;
            ys[1]<<^snoc<<fval2;
@@ -300,7 +503,9 @@ f[1]>>
            dzs[1]<<^snoc<<fval6;
            Read(f,xs,ys,zs,dxs,dys,dzs);
      ^None:
-      PrintEquations(xs,ys,zs,dxs,dys,dzs,1);
+      xs[1]<<^length;
+      xs[1]>>eqns;
+      PrintEquations(xs,ys,zs,dxs,dys,dzs,1,eqns);
     }
   ) // }}}
   xs=new list(2 of 2);
