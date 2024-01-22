@@ -451,23 +451,13 @@ f[1]>>
            Float fval6=0.0;
            STRING2FLOAT(line6,fval6);
 
-           // Test val 2
-           //c=new console(2 of 2);
-           //c[1]<<^str<<val1<<^str<<"->"<<^int<<fval1<<^nl
-           //    <<^str<<val2<<^str<<"->"<<^int<<fval2<<^nl
-           //    <<^str<<val3<<^str<<"->"<<^int<<fval3<<^nl
-           //    <<^str<<val4<<^str<<"->"<<^int<<fval4<<^nl
-           //    <<^str<<val5<<^str<<"->"<<^int<<fval5<<^nl
-           //    <<^str<<line6<<^str<<"->"<<^int<<fval6<<^nl
-           //    <<^end;
-
            xs[1]<<^snoc<<fval1;
            ys[1]<<^snoc<<fval2;
            zs[1]<<^snoc<<fval3;
            dxs[1]<<^snoc<<fval4;
            dys[1]<<^snoc<<fval5;
            dzs[1]<<^snoc<<fval6;
-           ts[1]<<^snoc<<10000.0;
+           ts[1]<<^snoc<<200000000000000.0;
            Read(f,xs,ys,zs,dxs,dys,dzs,ts);
      ^None:
       local RepeatMinCross($list(Float)(2 of 1 pure,2) xs, // {{{
@@ -485,8 +475,10 @@ f[1]>>
                             $list(Float)(2 of 1 pure,2) dxs,
                             $list(Float)(2 of 1 pure,2) dys,
                             $list(Float)(2 of 1 pure,2) dzs,
-                            $list(Float)(2 of 1 pure,2) ts
-                           )
+                            $list(Float)(2 of 1 pure,2) ts,
+                            Bool first,
+                            Float x1, Float y1, Float z1, Float dx1, Float dy1, Float dz1, Float t1,
+                            Float x2, Float y2, Float z2, Float dx2, Float dy2, Float dz2, Float t2)
              ( xs[1]<<^pop;
                xs[1]>>
                {^nil:
@@ -496,6 +488,19 @@ f[1]>>
                  dys[1]<<^end;
                  dzs[1]<<^end;
                  ts[1]<<^end;
+                 Float dx0=((x1+t1*dx1)-(x2+t2*dx2))/(t1-t2);
+                 Float x0=x1+t1*dx1-t1*dx0;
+                 Float dy0=((y1+t1*dy1)-(y2+t2*dy2))/(t1-t2);
+                 Float y0=y1+t1*dy1-t1*dy0;
+                 Float dz0=((z1+t1*dz1)-(z2+t2*dz2))/(t1-t2);
+                 Float z0=z1+t1*dz1-t1*dz0;
+                 c=new console(2 of 2);
+                 c[1]<<^str<<"Interpolated x': "<<^flt<<dx0<<^nl;
+                 c[1]<<^str<<"Interpolated x:  "<<^flt<<x0<<^nl;
+                 c[1]<<^str<<"Interpolated y': "<<^flt<<dy0<<^nl;
+                 c[1]<<^str<<"Interpolated y:  "<<^flt<<y0<<^nl;
+                 c[1]<<^str<<"Interpolated z': "<<^flt<<dz0<<^nl;
+                 c[1]<<^str<<"Interpolated z:  "<<^flt<<z0<<^nl<<^end;
                 ^cons:
                  xs[1]>>x>>xs2;
                  ys[1]<<^pop;
@@ -569,7 +574,15 @@ f[1]>>
                                  <<^flt<<x+t*dx<<^str<<","
                                  <<^flt<<y+t*dy<<^str<<","
                                  <<^flt<<z+t*dz<<^str<<")"<<^nl<<^end;
-                             PrintRes(xs2,ys2,zs2,dxs2,dys2,dzs2,ts2);
+                             if (first)
+                             then PrintRes(xs2,ys2,zs2,dxs2,dys2,dzs2,ts2,
+                                           false,
+                                           x,y,z,dx,dy,dz,t,
+                                           x2,y2,z2,dx2,dy2,dz2,t2);
+                             else PrintRes(xs2,ys2,zs2,dxs2,dys2,dzs2,ts2,
+                                           false,
+                                           x1,y1,z1,dx1,dy1,dz1,t1,
+                                           x,y,z,dx,dy,dz,t);
                            }
                          }
                        }
@@ -578,7 +591,10 @@ f[1]>>
                  }
                }
              ) // }}}
-             PrintRes(xs,ys,zs,dxs,dys,dzs,ts);
+             PrintRes(xs,ys,zs,dxs,dys,dzs,ts,
+                      true,
+                      0.0,0.0,0.0,0.0,0.0,0.0,0.0,
+                      0.0,0.0,0.0,0.0,0.0,0.0,0.0);
         else ts[1]<<^copy;
              ts[1]>>ts0;
              pf=new printflts(2 of 2);
@@ -600,7 +616,7 @@ f[1]>>
              mc[1]>>ts2;
              RepeatMinCross(xs2,ys2,zs2,dxs2,dys2,dzs2,ts2,f*0.995);
       ) // }}}
-      RepeatMinCross(xs,ys,zs,dxs,dys,dzs,ts,1000.0);
+      RepeatMinCross(xs,ys,zs,dxs,dys,dzs,ts,200000000000000.0);
     }
   ) // }}}
   xs=new list(2 of 2);
