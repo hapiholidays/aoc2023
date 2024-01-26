@@ -1,0 +1,147 @@
+#include <sys/file.pi>
+#include <struct/list.pi>
+#include <console.pi>
+#include <convert.pi>
+
+#define $strfind \
+  2->1: String; \
+  2->1: String; \
+  1->2: Int; \
+  $end;
+global $strfind strfind(1 pure,2);
+local pure service StrFindService(strfind (1 of 2) this) // {{{
+( this[2]>>data;
+  this[2]>>pat;
+  Int patlen=pat&^length;
+  if patlen<=0
+  then this[2]<<0;
+  else Int datalen=data&^length;
+       local pure StrFind(1->2:Int;$end;(1 of 1 pure,2) this, Int pos) // {{{
+       ( if datalen+1<=pos+patlen
+         then this[2]<<0-1;
+         else if (data%pos)/patlen=pat
+              then this[2]<<pos;
+              else StrFind(this,pos+1);
+       ) // }}}
+       StrFind(this,0);
+) // }}}
+|
+#define $hikeres \
+  1->2: Int; \
+  1->2: $list(String)(2 of 1 pure,2); \
+  $end;
+#define $hike \
+  2->1: $list(String)(2 of 1 pure,2); \
+  2->1: Int; \
+  2->1: Int; \
+  $hikeres
+global $hike hike(1 pure,2);
+local pure service HikeService(hike (1 of 2) this) // {{{
+( this[2]>>map>>x>>y;
+  HOST("cout << ((libpi::Int*)",x,".get())->ToString() << ',' << ((libpi::Int*)",y,".get())->ToString() << endl;") pure;
+  map[1]<<^length;
+  map[1]>>height;
+  if (y+1)<=0
+  then this[2]<<0-1<<map;
+  else map[1]<<^get<<y;
+       map[1]>>
+       {^err:
+         map[1]>>err;
+         this[2]<<0-1<<map;
+        ^val:
+         map[1]>>line;
+         String terrain=(line%x)/1;
+         if (terrain=".") and (y=height-1)
+         then this[2]<<0<<map;
+         else if terrain="."
+         then map[1]<<^set<<y<<(line/x)+"O"+(line%(x+1));
+              Int steps=0-1;
+              // Try going up
+              hup=new hike(2 of 2);
+              hup[1]<<map<<x<<y-1;
+              hup[1]>>lenup>>map;
+              Int steps2=if 0<=lenup then 1+lenup else steps;
+              // Try going down
+              hdown=new hike(2 of 2);
+              hdown[1]<<map<<x<<y+1;
+              hdown[1]>>lendown>>map;
+              Int steps3=if (0<=lendown) and (steps2<=lendown) then 1+lendown else steps2;
+              // Try going left
+              hleft=new hike(2 of 2);
+              hleft[1]<<map<<x-1<<y;
+              hleft[1]>>lenleft>>map;
+              Int steps4=if (0<=lenleft) and (steps3<=lenleft) then 1+lenleft else steps3;
+              // Try going right
+              hright=new hike(2 of 2);
+              hright[1]<<map<<x+1<<y;
+              hright[1]>>lenright>>map;
+              Int steps5=if (0<=lenright) and (steps4<=lenright) then 1+lenright else steps4;
+              map[1]<<^set<<y<<(line/x)+"."+(line%(x+1));
+              this[2]<<steps5<<map;
+         else if terrain="^"
+         then // Slide up
+              hup=new hike(2 of 2);
+              hup[1]<<map<<x<<y-1;
+              hup[1]>>len>>map;
+              Int steps=if 0<=len then 1+len else 0-1;
+              this[2]<<steps<<map;
+         else if terrain="v"
+         then // Slide down
+              hdown=new hike(2 of 2);
+              hdown[1]<<map<<x<<y+1;
+              hdown[1]>>len>>map;
+              Int steps=if 0<=len then 1+len else 0-1;
+              this[2]<<steps<<map;
+         else if terrain="<"
+         then // Slide left
+              hleft=new hike(2 of 2);
+              hleft[1]<<map<<x-1<<y;
+              hleft[1]>>len>>map;
+              Int steps=if 0<=len then 1+len else 0-1;
+              this[2]<<steps<<map;
+         else if terrain=">"
+         then // Slide right
+              hright=new hike(2 of 2);
+              hright[1]<<map<<x+1<<y;
+              hright[1]>>len>>map;
+              Int steps=if 0<=len then 1+len else 0-1;
+              this[2]<<steps<<map;
+         else // Got lost!
+              this[2]<<0-1<<map;
+       }
+) // }}}
+|
+local LongestHike($list(String)(2 of 1 pure,2) map) // {{{
+( h=new hike(2 of 2);
+  h[1]<<map<<1<<0;
+  h[1]>>len>>map;
+  map[1]<<^end;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Longest hike found was "<<^int<<len<<^str<<" steps long"<<^nl<<^end;
+) // }}}
+f=new file(2 of 2);
+f[1]<<^Read<<"input";
+f[1]>>
+{^OK:
+  local Read($infile(2 of 1,2) f, // {{{
+             $list(String)(2 of 1 pure,2) map)
+  ( f[1]<<^Line;
+    f[1]>>
+    {^Some:
+      f[1]>>line;
+      if line&^length<=0
+      then Read(f,map);
+      else map[1]<<^snoc<<line;
+           Read(f,map);
+     ^None:
+      LongestHike(map);
+    }
+  ) // }}}
+  map=new list(2 of 2);
+  map<<String;
+  Read(f,map);
+ ^Error:
+  f[1]>>err;
+  c=new console(2 of 2);
+  c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+}

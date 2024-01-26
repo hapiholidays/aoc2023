@@ -400,7 +400,7 @@ f[1]>>
       f[1]>>line;
       xs[1]<<^length;
       xs[1]>>points;
-      if (20<=points) or (line&^length<=0)
+      if (5<=points) or (line&^length<=0)
       then Read(f,xs,ys,zs,dxs,dys,dzs,ts);
       else // First value
            fs1=new strfind(2 of 2);
@@ -614,7 +614,7 @@ f[1]>>
              mc=new mincross(2 of 2);
              mc[1]<<xs<<ys<<zs<<dxs<<dys<<dzs<<ts<<f;
              mc[1]>>ts2;
-             RepeatMinCross(xs2,ys2,zs2,dxs2,dys2,dzs2,ts2,f*0.995);
+             RepeatMinCross(xs2,ys2,zs2,dxs2,dys2,dzs2,ts2,f*0.9);
       ) // }}}
       RepeatMinCross(xs,ys,zs,dxs,dys,dzs,ts,200000000000000.0);
     }
