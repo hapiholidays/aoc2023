@@ -1,0 +1,121 @@
+#include <sys/args.pi>
+#include <sys/file.pi>
+#include <struct/list.pi>
+#include <console.pi>
+#include <convert.pi>
+#include "listutils.pi"
+#include "strutils.pi"
+
+// Process data and print result
+local Process($list(Int)(2 of 1 pure,2) races, $list(Int)(2 of 1 pure,2) maxes, Int product) // {{{
+( races[1]<<^pop;
+  races[1]>>
+  {^nil:
+    maxes[1]<<^end;
+    c=new console(2 of 2);
+    c[1]<<^int<<product<<^nl<<^end;
+   ^cons:
+    races[1]>>race>>rtail;
+    maxes[1]<<^pop;
+    maxes[1]>>
+    {^nil:
+      rtail[1]<<^end;
+      c=new console(2 of 2);
+      c[1]<<^int<<product<<^nl<<^end;
+     ^cons:
+      maxes[1]>>max>>mtail;
+      local CountFaster(Int count, Int pos, Int race, Int max, $list(Int)(2 of 1 pure,2) races, $list(Int)(2 of 1 pure,2) maxes) // {{{
+      ( if race<=pos
+        then Process(races,maxes,product*count);
+        else if max+1<=pos*(race-pos)
+             then CountFaster(count+1,pos+1,race,max,races,maxes);
+             else CountFaster(count,pos+1,race,max,races,maxes);
+      ) // }}}
+      CountFaster(0,1,race,max,rtail,mtail);
+    }
+  }
+) // }}}
+// Parse file, handle errors and call Process with parsed structure
+local ProcessFile($infile(2 of 1,2) fin) // {{{
+( fin[1]<<^Line;
+  fin[1]>>
+  {^Some:
+    fin[1]>>racesstr;
+    fin[1]<<^Line;
+    fin[1]>>
+    {^Some:
+      fin[1]>>maxsstr;
+      fin[1]<<^Close;
+      local ParseRaces($list(Int)(2 of 1 pure,2) races, $list(Int)(2 of 1 pure,2) maxs, String racesstr, String maxsstr) // {{{
+      ( sf1=new strfind(2 of 2);
+        sf1[1]<<racesstr<<" ";
+        sf1[1]>>idx1;
+        sf2=new strfind(2 of 2);
+        sf2[1]<<maxsstr<<" ";
+        sf2[1]>>idx2;
+        if (0<=idx1) and (0<=idx2)
+        then
+          String racestr=racesstr/idx1;
+          Int race=0;
+          STRING2INT(racestr,race);
+          races[1]<<^cons<<race;
+          String maxstr=maxsstr/idx2;
+          Int max=0;
+          STRING2INT(maxstr,max);
+          maxs[1]<<^cons<<max;
+          ParseRaces(races,maxs,racesstr%(idx1+1),maxsstr%(idx2+1));
+        else
+          Int race=0;
+          STRING2INT(racesstr,race);
+          races[1]<<^cons<<race;
+          Int max=0;
+          STRING2INT(maxsstr,max);
+          maxs[1]<<^cons<<max;
+
+          rraces=new revlist(2 of 2);
+          rraces<<Int;
+          rraces[1]<<races;
+          rmaxs=new revlist(2 of 2);
+          rmaxs<<Int;
+          rmaxs[1]<<maxs;
+          Process(rraces,rmaxs,1);
+      ) // }}}
+      races=new list(2 of 2);
+      races<<Int;
+      maxs=new list(2 of 2);
+      maxs<<Int;
+      ParseRaces(races,maxs,racesstr,maxsstr);
+     ^None:
+      c=new console(2 of 2);
+      c[1]<<^str<<"Error, missing maxs line in file"<<^nl<<^end;
+    }
+   ^None:
+    c=new console(2 of 2);
+    c[1]<<^str<<"Error, missing races line in file"<<^nl<<^end;
+  }
+) // }}}
+// Open file, handle errors and call ProcessFile with filehandle in case of success
+local ProcessFilename(String fname) // {{{
+( f=new file(2 of 2);
+  f[1]<<^Read<<fname;
+  f[1]>>
+  {^OK:
+    ProcessFile(f);
+   ^Error:
+    f[1]>>err;
+    c=new console(2 of 2);
+    c[1]<<^str<<"Unable to open input file: " << ^str << err << ^nl << ^end;
+  }
+) // }}}
+// Actual program
+arguments = new args(2 of 2);
+arguments[1]<<^arg<<1;
+arguments[1]>>
+{^none:
+  arguments[1]<<^end;
+  ProcessFilename("input");
+ ^some:
+  arguments[1]>>fname;
+  arguments[1]<<^end;
+  ProcessFilename(fname);
+}
